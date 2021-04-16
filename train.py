@@ -64,16 +64,27 @@ parser.add_argument('-c', '--config', default='', type=str, metavar='FILE',
 
 parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
 
+# TODO <------------------------------------
+DEFAULT_DATA_DIR = "/home/nipopovic/Projects/hl_task_prediction/big_storage/data_sets_shortcut/ImageNet/tmp_hdf5"
+DATASET = "hdf5" # ""
+DEFAULT_MODEL = "resnet50_s32_trf_frac_1"
+DEFAULT_MODEL = "resnet34"
+DEFAULT_BATCH_SIZE = 4
+NUM_WORKERS = 1
+DEFAULT_OUTPUT_DIR = "/home/nipopovic/Projects/hl_task_prediction/big_storage/experiment_logs_shortcut/tmp"
+# TODO <------------------------------------
+
 # Dataset / Model parameters
-parser.add_argument('data_dir', metavar='DIR',
-                    help='path to dataset')
-parser.add_argument('--dataset', '-d', metavar='NAME', default='',
+parser.add_argument('--data_dir', metavar='DIR',
+                    help='path to dataset',
+                    default=DEFAULT_DATA_DIR)
+parser.add_argument('--dataset', '-d', metavar='NAME', default=DATASET,
                     help='dataset type (default: ImageFolder/ImageTar if empty)')
 parser.add_argument('--train-split', metavar='NAME', default='train',
                     help='dataset train split (default: train)')
 parser.add_argument('--val-split', metavar='NAME', default='validation',
                     help='dataset validation split (default: validation)')
-parser.add_argument('--model', default='resnet101', type=str, metavar='MODEL',
+parser.add_argument('--model', default=DEFAULT_MODEL, type=str, metavar='MODEL',
                     help='Name of model to train (default: "countception"')
 parser.add_argument('--pretrained', action='store_true', default=False,
                     help='Start with pretrained version of specified network (if avail)')
@@ -99,7 +110,7 @@ parser.add_argument('--std', type=float, nargs='+', default=None, metavar='STD',
                     help='Override std deviation of of dataset')
 parser.add_argument('--interpolation', default='', type=str, metavar='NAME',
                     help='Image resize interpolation type (overrides model)')
-parser.add_argument('-b', '--batch-size', type=int, default=32, metavar='N',
+parser.add_argument('-b', '--batch-size', type=int, default=DEFAULT_BATCH_SIZE, metavar='N',
                     help='input batch size for training (default: 32)')
 parser.add_argument('-vb', '--validation-batch-size-multiplier', type=int, default=1, metavar='N',
                     help='ratio of validation batch size to training batch size (default: 1)')
@@ -242,7 +253,7 @@ parser.add_argument('--recovery-interval', type=int, default=0, metavar='N',
                     help='how many batches to wait before writing recovery checkpoint')
 parser.add_argument('--checkpoint-hist', type=int, default=10, metavar='N',
                     help='number of checkpoints to keep (default: 10)')
-parser.add_argument('-j', '--workers', type=int, default=4, metavar='N',
+parser.add_argument('-j', '--workers', type=int, default=NUM_WORKERS, metavar='N',
                     help='how many training processes to use (default: 1)')
 parser.add_argument('--save-images', action='store_true', default=False,
                     help='save images of input bathes every log interval for debugging')
@@ -258,7 +269,7 @@ parser.add_argument('--pin-mem', action='store_true', default=False,
                     help='Pin CPU memory in DataLoader for more efficient (sometimes) transfer to GPU.')
 parser.add_argument('--no-prefetcher', action='store_true', default=False,
                     help='disable fast prefetcher')
-parser.add_argument('--output', default='', type=str, metavar='PATH',
+parser.add_argument('--output', default=DEFAULT_OUTPUT_DIR, type=str, metavar='PATH',
                     help='path to output folder (default: none, current dir)')
 parser.add_argument('--experiment', default='', type=str, metavar='NAME',
                     help='name of train experiment, name of sub-folder for output')
@@ -291,8 +302,21 @@ def _parse_args():
 
 
 def main():
-    setup_default_logging()
     args, args_text = _parse_args()
+
+    output_dir = ''
+    if args.local_rank == 0:
+        if args.experiment:
+            exp_name = args.experiment
+        else:
+            exp_name = '-'.join([
+                datetime.now().strftime("%Y%m%d-%H%M%S"),
+                safe_model_name(args.model),
+                #str(data_config['input_size'][-1])
+            ])
+        output_dir = get_outdir(args.output if args.output else './output/train', exp_name)
+    
+    setup_default_logging(log_path=os.path.join(output_dir, "print_log.txt"))
 
     args.prefetcher = not args.no_prefetcher
     args.distributed = False
@@ -350,8 +374,9 @@ def main():
         args.num_classes = model.num_classes  # FIXME handle model default vs config num_classes more elegantly
 
     if args.local_rank == 0:
+        n_param = sum([m.numel() for m in model.parameters()])
         _logger.info(
-            f'Model {safe_model_name(args.model)} created, param count:{sum([m.numel() for m in model.parameters()])}')
+            f'Model {safe_model_name(args.model)} created, param count:{n_param} ({(float(n_param)/(10.0**6)):.1f} M)')
 
     data_config = resolve_data_config(vars(args), model=model, verbose=args.local_rank == 0)
 
@@ -545,17 +570,17 @@ def main():
     best_metric = None
     best_epoch = None
     saver = None
-    output_dir = ''
+    # output_dir = ''
     if args.local_rank == 0:
-        if args.experiment:
-            exp_name = args.experiment
-        else:
-            exp_name = '-'.join([
-                datetime.now().strftime("%Y%m%d-%H%M%S"),
-                safe_model_name(args.model),
-                str(data_config['input_size'][-1])
-            ])
-        output_dir = get_outdir(args.output if args.output else './output/train', exp_name)
+        # if args.experiment:
+        #     exp_name = args.experiment
+        # else:
+        #     exp_name = '-'.join([
+        #         datetime.now().strftime("%Y%m%d-%H%M%S"),
+        #         safe_model_name(args.model),
+        #         str(data_config['input_size'][-1])
+        #     ])
+        # output_dir = get_outdir(args.output if args.output else './output/train', exp_name)
         decreasing = True if eval_metric == 'loss' else False
         saver = CheckpointSaver(
             model=model, optimizer=optimizer, args=args, model_ema=model_ema, amp_scaler=loss_scaler,

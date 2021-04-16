@@ -36,6 +36,9 @@ from .vovnet import *
 from .xception import *
 from .xception_aligned import *
 
+# TODO Custom made
+from .resnet_trf_frac import *
+
 from .factory import create_model, split_model_name, safe_model_name
 from .helpers import load_checkpoint, resume_checkpoint, model_parameters
 from .layers import TestTimePoolHead, apply_test_time_pool

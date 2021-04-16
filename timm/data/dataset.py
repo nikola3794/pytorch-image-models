@@ -11,6 +11,8 @@ from PIL import Image
 
 from .parsers import create_parser
 
+import h5py, io
+
 _logger = logging.getLogger(__name__)
 
 
@@ -54,6 +56,63 @@ class ImageDataset(data.Dataset):
 
     def __len__(self):
         return len(self.parser)
+
+    def filename(self, index, basename=False, absolute=False):
+        return self.parser.filename(index, basename, absolute)
+
+    def filenames(self, basename=False, absolute=False):
+        return self.parser.filenames(basename, absolute)
+
+
+class ImageDatasetHDF5(data.Dataset):
+
+    def __init__(
+            self,
+            hdf5_path,
+            parser=None,
+            class_map='',
+            load_bytes=False,
+            transform=None,
+    ):
+        if parser is None or isinstance(parser, str):
+            parser = create_parser(parser or '', root=hdf5_path, class_map=class_map)
+        self.hdf5_path = hdf5_path
+        self.parser = parser
+        self.load_bytes = load_bytes
+        self.transform = transform
+        self._consecutive_errors = 0
+
+    def __getitem__(self, index):
+        rel_path, target = self.parser[index]
+        try:
+            img_bytes = self.read_binary(rel_path=rel_path)
+            img = Image.open(io.BytesIO(img_bytes)).convert('RGB')
+        except Exception as e:
+            _logger.warning(f'Skipped sample (index {index}, file {self.parser.filename(index)}). {str(e)}')
+            self._consecutive_errors += 1
+            if self._consecutive_errors < _ERROR_RETRY:
+                return self.__getitem__((index + 1) % len(self.parser))
+            else:
+                raise e
+
+        self._consecutive_errors = 0
+        if self.transform is not None:
+            img = self.transform(img)
+        if target is None:
+            target = torch.tensor(-1, dtype=torch.long)
+        return img, target
+
+    def __len__(self):
+        return len(self.parser)
+    
+    def read_binary(self, rel_path):
+        hfile = None
+        try:
+            hfile = h5py.File(self.hdf5_path, 'r')
+            return hfile[rel_path]['raw'][0]
+        finally:
+            if hfile is not None:
+                hfile.close()
 
     def filename(self, index, basename=False, absolute=False):
         return self.parser.filename(index, basename, absolute)
