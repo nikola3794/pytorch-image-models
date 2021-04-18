@@ -68,9 +68,11 @@ parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
 
 # TODO <------------------------------------
 DEFAULT_DATA_DIR = "/home/nipopovic/Projects/hl_task_prediction/big_storage/data_sets_shortcut/ImageNet/tmp_hdf5"
+DEFAULT_DATA_DIR = "/cluster/work/cvl/nipopovic/data/ImageNet/2012-1k"
 TRAIN_SET_PERCENTAGE = 100
 DATASET = "hdf5" # ""
 DEFAULT_OUTPUT_DIR = "/home/nipopovic/Projects/hl_task_prediction/big_storage/experiment_logs_shortcut/tmp"
+DEFAULT_OUTPUT_DIR = "/cluster/work/cvl/nipopovic/experiments/ImageNet/"
 
 DEFAULT_MODEL = "resnet50_s32_trf_frac_just_v_1" # "resnet50_s32_trf_frac_1"
 DEFAULT_BATCH_SIZE = 64
