@@ -14,6 +14,8 @@ import torch.nn.functional as F
 
 import einops
 
+import copy
+
 from timm.data import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
 from .helpers import build_model_with_cfg
 from .layers import DropBlock2d, DropPath, AvgPool2dSame, BlurPool2d, create_attn, create_classifier
@@ -22,6 +24,7 @@ from .registry import register_model
 from .helper_modules.transformer import Transformer
 
 __all__ = ['ResNetTrfFractal', 'BasicBlock', 'Bottleneck']  # model_registry will add each entrypoint fn to this
+
 
     
 trf_1_stage_cfg = {
@@ -33,9 +36,11 @@ trf_1_stage_cfg = {
     "dropout": 0.05,
     "emb_dropout": 0.05,
     "pool": "token_0",
-    "just_values": True,
+    "just_values": False,
     "no_ffn": False,
 }
+trf_1_stage_just_v_cfg = copy.copy(trf_1_stage_cfg)
+trf_1_stage_just_v_cfg["just_values"] = True
 
 def _cfg(url='', **kwargs):
     return {
@@ -49,6 +54,14 @@ def _cfg(url='', **kwargs):
 
 
 default_cfgs = {
+    'resnet50_s32_trf_frac_just_v_1': _cfg(
+        url='',
+        interpolation='bicubic'),
+
+    'resnet50_s16_trf_frac_just_v_1': _cfg(
+        url='',
+        interpolation='bicubic'),
+        
     'resnet50_s32_trf_frac_1': _cfg(
         url='',
         interpolation='bicubic'),
@@ -788,6 +801,24 @@ def _create_resnet(variant, pretrained=False, **kwargs):
 
 
 @register_model
+def resnet50_s32_trf_frac_just_v_1(pretrained=False, **kwargs):
+    kwargs["output_stride"] = 32
+
+    trf_stage_cfg = trf_1_stage_just_v_cfg
+
+    model_args = dict(block=Bottleneck, layers=[3, 4, 6, 3], trf_stage_cfg=trf_stage_cfg,  **kwargs)
+    return _create_resnet('resnet50_s32_trf_frac_just_v_1', pretrained, **model_args)
+
+
+@register_model
+def resnet50_s16_trf_frac_just_v_1(pretrained=False, **kwargs):
+    kwargs["output_stride"] = 16
+
+    trf_stage_cfg = trf_1_stage_just_v_cfg
+
+    model_args = dict(block=Bottleneck, layers=[3, 4, 6, 3], trf_stage_cfg=trf_stage_cfg,  **kwargs)
+    return _create_resnet('resnet50_s16_trf_frac_just_v_1', pretrained, **model_args)
+@register_model
 def resnet50_s32_trf_frac_1(pretrained=False, **kwargs):
     kwargs["output_stride"] = 32
 
@@ -804,7 +835,7 @@ def resnet50_s16_trf_frac_1(pretrained=False, **kwargs):
     trf_stage_cfg = trf_1_stage_cfg
 
     model_args = dict(block=Bottleneck, layers=[3, 4, 6, 3], trf_stage_cfg=trf_stage_cfg,  **kwargs)
-    return _create_resnet('resnet50_s32_trf_frac_1', pretrained, **model_args)
+    return _create_resnet('resnet50_s16_trf_frac_1', pretrained, **model_args)
 
 
 # @register_model

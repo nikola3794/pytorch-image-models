@@ -73,14 +73,16 @@ class ImageDatasetHDF5(data.Dataset):
             class_map='',
             load_bytes=False,
             transform=None,
+            train_split_percentage=100,
     ):
         if parser is None or isinstance(parser, str):
-            parser = create_parser(parser or '', root=hdf5_path, class_map=class_map)
+            parser = create_parser(parser or '', root=hdf5_path, class_map=class_map, train_split_percentage=train_split_percentage)
         self.hdf5_path = hdf5_path
         self.parser = parser
         self.load_bytes = load_bytes
         self.transform = transform
         self._consecutive_errors = 0
+        self.hf5_file_fh = None
 
     def __getitem__(self, index):
         rel_path, target = self.parser[index]
@@ -113,6 +115,9 @@ class ImageDatasetHDF5(data.Dataset):
         finally:
             if hfile is not None:
                 hfile.close()
+        # if self.hf5_file_fh is None:
+        #     self.hf5_file_fh = h5py.File(self.hdf5_path, 'r')
+        # return self.hf5_file_fh[rel_path]['raw'][0]
 
     def filename(self, index, basename=False, absolute=False):
         return self.parser.filename(index, basename, absolute)

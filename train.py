@@ -28,6 +28,8 @@ import torch.nn as nn
 import torchvision.utils
 from torch.nn.parallel import DistributedDataParallel as NativeDDP
 
+import wandb
+
 from timm.data import create_dataset, create_loader, resolve_data_config, Mixup, FastCollateMixup, AugMixDataset
 from timm.models import create_model, safe_model_name, resume_checkpoint, load_checkpoint,\
     convert_splitbn_model, model_parameters
@@ -66,12 +68,27 @@ parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
 
 # TODO <------------------------------------
 DEFAULT_DATA_DIR = "/home/nipopovic/Projects/hl_task_prediction/big_storage/data_sets_shortcut/ImageNet/tmp_hdf5"
+TRAIN_SET_PERCENTAGE = 100
 DATASET = "hdf5" # ""
-DEFAULT_MODEL = "resnet50_s32_trf_frac_1"
-DEFAULT_MODEL = "resnet34"
-DEFAULT_BATCH_SIZE = 4
-NUM_WORKERS = 1
 DEFAULT_OUTPUT_DIR = "/home/nipopovic/Projects/hl_task_prediction/big_storage/experiment_logs_shortcut/tmp"
+
+DEFAULT_MODEL = "resnet50_s32_trf_frac_just_v_1" # "resnet50_s32_trf_frac_1"
+DEFAULT_BATCH_SIZE = 64
+NUM_WORKERS = 8
+
+# TODO RESNET50 SPECIFIC ARG RECOMMENDATION
+LR_SCHED = "cosine"
+EPOCHS = 200
+LR = 0.05
+AMP = False
+REMODE = "pixel"
+REPROB = 0.6
+AUG_SPLITS = 3
+AA = "rand-m9-mstd0.5-inc1"
+RESPLIT = True
+SPLIT_BN = True
+JSD = True
+DIST_BN = "reduce"
 # TODO <------------------------------------
 
 # Dataset / Model parameters
@@ -82,6 +99,8 @@ parser.add_argument('--dataset', '-d', metavar='NAME', default=DATASET,
                     help='dataset type (default: ImageFolder/ImageTar if empty)')
 parser.add_argument('--train-split', metavar='NAME', default='train',
                     help='dataset train split (default: train)')
+parser.add_argument('--train-split-percentage', metavar='PERC', type=int, default=TRAIN_SET_PERCENTAGE,
+                    help='percentage of training set to use (for low-data learning experiments)')
 parser.add_argument('--val-split', metavar='NAME', default='validation',
                     help='dataset validation split (default: validation)')
 parser.add_argument('--model', default=DEFAULT_MODEL, type=str, metavar='MODEL',
@@ -133,9 +152,9 @@ parser.add_argument('--clip-mode', type=str, default='norm',
 
 
 # Learning rate schedule parameters
-parser.add_argument('--sched', default='step', type=str, metavar='SCHEDULER',
+parser.add_argument('--sched', default=LR_SCHED, type=str, metavar='SCHEDULER',
                     help='LR scheduler (default: "step"')
-parser.add_argument('--lr', type=float, default=0.01, metavar='LR',
+parser.add_argument('--lr', type=float, default=LR, metavar='LR',
                     help='learning rate (default: 0.01)')
 parser.add_argument('--lr-noise', type=float, nargs='+', default=None, metavar='pct, pct',
                     help='learning rate noise on/off epoch percentages')
@@ -151,7 +170,7 @@ parser.add_argument('--warmup-lr', type=float, default=0.0001, metavar='LR',
                     help='warmup learning rate (default: 0.0001)')
 parser.add_argument('--min-lr', type=float, default=1e-5, metavar='LR',
                     help='lower lr bound for cyclic schedulers that hit 0 (1e-5)')
-parser.add_argument('--epochs', type=int, default=200, metavar='N',
+parser.add_argument('--epochs', type=int, default=EPOCHS, metavar='N',
                     help='number of epochs to train (default: 2)')
 parser.add_argument('--epoch-repeats', type=float, default=0., metavar='N',
                     help='epoch repeat multiplier (number of times to repeat dataset epoch per train epoch).')
@@ -181,19 +200,19 @@ parser.add_argument('--vflip', type=float, default=0.,
                     help='Vertical flip training aug probability')
 parser.add_argument('--color-jitter', type=float, default=0.4, metavar='PCT',
                     help='Color jitter factor (default: 0.4)')
-parser.add_argument('--aa', type=str, default=None, metavar='NAME',
+parser.add_argument('--aa', type=str, default=AA, metavar='NAME',
                     help='Use AutoAugment policy. "v0" or "original". (default: None)'),
-parser.add_argument('--aug-splits', type=int, default=0,
+parser.add_argument('--aug-splits', type=int, default=AUG_SPLITS,
                     help='Number of augmentation splits (default: 0, valid: 0 or >=2)')
-parser.add_argument('--jsd', action='store_true', default=False,
+parser.add_argument('--jsd', action='store_true', default=JSD,
                     help='Enable Jensen-Shannon Divergence + CE loss. Use with `--aug-splits`.')
-parser.add_argument('--reprob', type=float, default=0., metavar='PCT',
+parser.add_argument('--reprob', type=float, default=REPROB, metavar='PCT',
                     help='Random erase prob (default: 0.)')
-parser.add_argument('--remode', type=str, default='const',
+parser.add_argument('--remode', type=str, default=REMODE,
                     help='Random erase mode (default: "const")')
 parser.add_argument('--recount', type=int, default=1,
                     help='Random erase count (default: 1)')
-parser.add_argument('--resplit', action='store_true', default=False,
+parser.add_argument('--resplit', action='store_true', default=RESPLIT,
                     help='Do not random erase first (clean) augmentation split')
 parser.add_argument('--mixup', type=float, default=0.0,
                     help='mixup alpha, mixup enabled if > 0. (default: 0.)')
@@ -231,9 +250,9 @@ parser.add_argument('--bn-eps', type=float, default=None,
                     help='BatchNorm epsilon override (if not None)')
 parser.add_argument('--sync-bn', action='store_true',
                     help='Enable NVIDIA Apex or Torch synchronized BatchNorm.')
-parser.add_argument('--dist-bn', type=str, default='',
+parser.add_argument('--dist-bn', type=str, default=DIST_BN,
                     help='Distribute BatchNorm stats between nodes after each epoch ("broadcast", "reduce", or "")')
-parser.add_argument('--split-bn', action='store_true',
+parser.add_argument('--split-bn', action='store_true', default=SPLIT_BN,
                     help='Enable separate BN layers per augmentation split.')
 
 # Model Exponential Moving Average
@@ -257,7 +276,7 @@ parser.add_argument('-j', '--workers', type=int, default=NUM_WORKERS, metavar='N
                     help='how many training processes to use (default: 1)')
 parser.add_argument('--save-images', action='store_true', default=False,
                     help='save images of input bathes every log interval for debugging')
-parser.add_argument('--amp', action='store_true', default=False,
+parser.add_argument('--amp', action='store_true', default=AMP,
                     help='use NVIDIA Apex AMP or Native AMP for mixed precision training')
 parser.add_argument('--apex-amp', action='store_true', default=False,
                     help='Use NVIDIA Apex AMP mixed precision')
@@ -317,6 +336,10 @@ def main():
         output_dir = get_outdir(args.output if args.output else './output/train', exp_name)
     
     setup_default_logging(log_path=os.path.join(output_dir, "print_log.txt"))
+
+    print("Argument parser collected the following arguments:")
+    print(args)
+    print("\n")
 
     args.prefetcher = not args.no_prefetcher
     args.distributed = False
@@ -482,7 +505,8 @@ def main():
     dataset_train = create_dataset(
         args.dataset,
         root=args.data_dir, split=args.train_split, is_training=True,
-        batch_size=args.batch_size, repeats=args.epoch_repeats)
+        batch_size=args.batch_size, repeats=args.epoch_repeats,
+        train_split_percentage=args.train_split_percentage)
     dataset_eval = create_dataset(
         args.dataset, root=args.data_dir, split=args.val_split, is_training=False, batch_size=args.batch_size)
 
@@ -588,6 +612,18 @@ def main():
         with open(os.path.join(output_dir, 'args.yaml'), 'w') as f:
             f.write(args_text)
 
+        # Make a wandb logger
+        wandb.init(
+            project="ImageNet", 
+            name=exp_name, 
+            config=args,
+            dir=output_dir,
+        )
+        wandb.watch(
+            model,
+            log='gradients', 
+            log_freq=args.log_interval
+        )
     try:
         for epoch in range(start_epoch, num_epochs):
             if args.distributed and hasattr(loader_train.sampler, 'set_epoch'):
@@ -620,6 +656,24 @@ def main():
                 epoch, train_metrics, eval_metrics, os.path.join(output_dir, 'summary.csv'),
                 write_header=best_metric is None)
 
+            # Log losses/metrics at the end of the epoch
+            if args.local_rank == 0:                
+                wandb.log({
+                    "train/loss/step": train_metrics["loss"],
+                    "train/top1/step": train_metrics["top1"],
+                    "train/top5/step": train_metrics["top5"],
+                })                
+                wandb.log({
+                    "train/loss": train_metrics["loss"],
+                    "train/top1": train_metrics["top1"],
+                    "train/top5": train_metrics["top5"],
+                })             
+                wandb.log({
+                    "val/loss": eval_metrics["loss"],
+                    "val/top1": eval_metrics["top1"],
+                    "val/top5": eval_metrics["top5"],
+                })
+
             if saver is not None:
                 # save proper checkpoint with eval metric
                 save_metric = eval_metrics[eval_metric]
@@ -646,6 +700,8 @@ def train_one_epoch(
     batch_time_m = AverageMeter()
     data_time_m = AverageMeter()
     losses_m = AverageMeter()
+    top1_m = AverageMeter()
+    top5_m = AverageMeter()
 
     model.train()
 
@@ -665,9 +721,13 @@ def train_one_epoch(
         with amp_autocast():
             output = model(input)
             loss = loss_fn(output, target)
+            acc1, acc5 = accuracy(output, target, topk=(1, 5))
 
         if not args.distributed:
             losses_m.update(loss.item(), input.size(0))
+
+            top1_m.update(acc1.item(), output.size(0))
+            top5_m.update(acc5.item(), output.size(0))
 
         optimizer.zero_grad()
         if loss_scaler is not None:
@@ -698,6 +758,11 @@ def train_one_epoch(
                 reduced_loss = reduce_tensor(loss.data, args.world_size)
                 losses_m.update(reduced_loss.item(), input.size(0))
 
+                acc1 = reduce_tensor(acc1, args.world_size)
+                acc5 = reduce_tensor(acc5, args.world_size)
+                top1_m.update(acc1.item(), output.size(0))
+                top5_m.update(acc5.item(), output.size(0))
+
             if args.local_rank == 0:
                 _logger.info(
                     'Train: {} [{:>4d}/{} ({:>3.0f}%)]  '
@@ -715,6 +780,14 @@ def train_one_epoch(
                         rate_avg=input.size(0) * args.world_size / batch_time_m.avg,
                         lr=lr,
                         data_time=data_time_m))
+                
+                # Log losses/metrics to wandb at appropriate steps
+                wandb.log({
+                    "misc/lr": lr,
+                    "train/loss/step": losses_m.avg,
+                    "train/top1/step": top1_m.avg,
+                    "train/top5/step": top5_m.avg,
+                })
 
                 if args.save_images and output_dir:
                     torchvision.utils.save_image(
@@ -736,7 +809,7 @@ def train_one_epoch(
     if hasattr(optimizer, 'sync_lookahead'):
         optimizer.sync_lookahead()
 
-    return OrderedDict([('loss', losses_m.avg)])
+    return OrderedDict([('loss', losses_m.avg), ('top1', top1_m.avg), ('top5', top5_m.avg)])
 
 
 def validate(model, loader, loss_fn, args, amp_autocast=suppress, log_suffix=''):

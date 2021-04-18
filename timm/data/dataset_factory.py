@@ -47,4 +47,6 @@ def create_dataset(name, root, split='validation', search_split=True, is_trainin
         if search_split and os.path.isdir(root):
             root = _search_split(root, split)
         ds = ImageDataset(root, parser=name, **kwargs)
+
+    print(f"Created {split} data set partition containing {ds.__len__()} data points. (name:{name}, root:{root})\n")
     return ds

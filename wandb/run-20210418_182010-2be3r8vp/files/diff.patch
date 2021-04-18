@@ -1,0 +1,431 @@
+diff --git a/timm/data/dataset.py b/timm/data/dataset.py
+index 27e9eec..e551d99 100644
+--- a/timm/data/dataset.py
++++ b/timm/data/dataset.py
+@@ -73,14 +73,16 @@ class ImageDatasetHDF5(data.Dataset):
+             class_map='',
+             load_bytes=False,
+             transform=None,
++            train_split_percentage=100,
+     ):
+         if parser is None or isinstance(parser, str):
+-            parser = create_parser(parser or '', root=hdf5_path, class_map=class_map)
++            parser = create_parser(parser or '', root=hdf5_path, class_map=class_map, train_split_percentage=train_split_percentage)
+         self.hdf5_path = hdf5_path
+         self.parser = parser
+         self.load_bytes = load_bytes
+         self.transform = transform
+         self._consecutive_errors = 0
++        self.hf5_file_fh = None
+ 
+     def __getitem__(self, index):
+         rel_path, target = self.parser[index]
+@@ -113,6 +115,9 @@ class ImageDatasetHDF5(data.Dataset):
+         finally:
+             if hfile is not None:
+                 hfile.close()
++        # if self.hf5_file_fh is None:
++        #     self.hf5_file_fh = h5py.File(self.hdf5_path, 'r')
++        # return self.hf5_file_fh[rel_path]['raw'][0]
+ 
+     def filename(self, index, basename=False, absolute=False):
+         return self.parser.filename(index, basename, absolute)
+diff --git a/timm/data/dataset_factory.py b/timm/data/dataset_factory.py
+index b792efc..073ab2c 100644
+--- a/timm/data/dataset_factory.py
++++ b/timm/data/dataset_factory.py
+@@ -47,4 +47,6 @@ def create_dataset(name, root, split='validation', search_split=True, is_trainin
+         if search_split and os.path.isdir(root):
+             root = _search_split(root, split)
+         ds = ImageDataset(root, parser=name, **kwargs)
++
++    print(f"Created {split} data set partition containing {ds.__len__()} data points. (name:{name}, root:{root})\n")
+     return ds
+diff --git a/timm/data/parsers/parser_image_in_hdf5.py b/timm/data/parsers/parser_image_in_hdf5.py
+index 9681ae2..5f25122 100644
+--- a/timm/data/parsers/parser_image_in_hdf5.py
++++ b/timm/data/parsers/parser_image_in_hdf5.py
+@@ -18,12 +18,15 @@ import json
+ import h5py
+ 
+ 
+-def find_images_and_targets_in_hdf5(hdf5_path, types=IMG_EXTENSIONS, class_to_idx=None, leaf_name_only=True, sort=True):
++def find_images_and_targets_in_hdf5(hdf5_path, types=IMG_EXTENSIONS, class_to_idx=None, leaf_name_only=True, sort=True, train_split_percentage=100):
+     # Load directly if this information is saved already
+     data_root_dir = os.path.dirname(hdf5_path)
+     which_split = os.path.basename(hdf5_path).split(".")[0]
+-    samples_path = os.path.join(data_root_dir, f"{which_split}_samples.json")
+-    class_to_idx_path = os.path.join(data_root_dir, f"{which_split}_class_to_idx.json")
++    if train_split_percentage == 100:
++        samples_path = os.path.join(data_root_dir, "partitions", f"{which_split}_samples.json")
++    else:
++        samples_path = os.path.join(data_root_dir, "partitions", f"{which_split}_samples_{train_split_percentage}.json")
++    class_to_idx_path = os.path.join(data_root_dir, "partitions", f"class_to_idx.json")
+     if os.path.isfile(samples_path) and os.path.isfile(class_to_idx_path):
+         with open(samples_path, "r") as fh:
+             images_and_targets = json.load(fh)
+@@ -31,45 +34,49 @@ def find_images_and_targets_in_hdf5(hdf5_path, types=IMG_EXTENSIONS, class_to_id
+         with open(class_to_idx_path, "r") as fh:
+             class_to_idx = json.load(fh)
+         return images_and_targets, class_to_idx
+-
+-    labels = []
+-    filenames = []
+-    with h5py.File(hdf5_path, 'r') as fh:
+-        for i, cls_dir in enumerate(fh):
+-            # Option 1
+-            img_names = list(fh[cls_dir])
+-            img_names = [cls_dir + "/" + x for x in img_names]
+-            filenames.extend(img_names)
+-            labels.extend([cls_dir] * len(img_names))
+-
+-            # Option 2 
+-            # for img_name in fh[cls_dir]:
+-            #     base, ext = os.path.splitext(img_name)
+-            #     if ext.lower() in types:
+-            #         filenames.append(cls_dir + "/" + img_name)
+-            #         labels.append(cls_dir)
+-    if class_to_idx is None:
+-        # building class index
+-        unique_labels = set(labels)
+-        sorted_labels = list(sorted(unique_labels, key=natural_key))
+-        class_to_idx = {c: idx for idx, c in enumerate(sorted_labels)}
+-    images_and_targets = [(f, class_to_idx[l]) for f, l in zip(filenames, labels) if l in class_to_idx]
+-    if sort:
+-        images_and_targets = sorted(images_and_targets, key=lambda k: natural_key(k[0]))
++    else:
++        raise FileNotFoundError
++
++    # TODO For now only load from pre-computed data points lists for HDF5
++
++    # labels = []
++    # filenames = []
++    # with h5py.File(hdf5_path, 'r') as fh:
++    #     for i, cls_dir in enumerate(fh):
++    #         # Option 1
++    #         img_names = list(fh[cls_dir])
++    #         img_names = [cls_dir + "/" + x for x in img_names]
++    #         filenames.extend(img_names)
++    #         labels.extend([cls_dir] * len(img_names))
++
++    #         # Option 2 
++    #         # for img_name in fh[cls_dir]:
++    #         #     base, ext = os.path.splitext(img_name)
++    #         #     if ext.lower() in types:
++    #         #         filenames.append(cls_dir + "/" + img_name)
++    #         #         labels.append(cls_dir)
++    # if class_to_idx is None:
++    #     # building class index
++    #     unique_labels = set(labels)
++    #     sorted_labels = list(sorted(unique_labels, key=natural_key))
++    #     class_to_idx = {c: idx for idx, c in enumerate(sorted_labels)}
++    # images_and_targets = [(f, class_to_idx[l]) for f, l in zip(filenames, labels) if l in class_to_idx]
++    # if sort:
++    #     images_and_targets = sorted(images_and_targets, key=lambda k: natural_key(k[0]))
+     
+-    # Save these lists if they are not saved already for the current dataset
+-    # (because loading them here takes time)
+-    data_root_dir = os.path.dirname(hdf5_path)
+-    which_split = os.path.basename(hdf5_path).split(".")[0]
+-    samples_path = os.path.join(data_root_dir, f"{which_split}_samples.json")
+-    if not os.path.isfile(samples_path):
+-        with open(samples_path, "w") as fh:
+-            json.dump(images_and_targets, fh)
+-    class_to_idx_path = os.path.join(data_root_dir, f"{which_split}_class_to_idx.json")
+-    if not os.path.isfile(class_to_idx_path):
+-        with open(class_to_idx_path, "w") as fh:
+-            json.dump(class_to_idx, fh)
+-    return images_and_targets, class_to_idx
++    # # Save these lists if they are not saved already for the current dataset
++    # # (because loading them here takes time)
++    # data_root_dir = os.path.dirname(hdf5_path)
++    # which_split = os.path.basename(hdf5_path).split(".")[0]
++    # samples_path = os.path.join(data_root_dir, f"{which_split}_samples.json")
++    # if not os.path.isfile(samples_path):
++    #     with open(samples_path, "w") as fh:
++    #         json.dump(images_and_targets, fh)
++    # class_to_idx_path = os.path.join(data_root_dir, f"{which_split}_class_to_idx.json")
++    # if not os.path.isfile(class_to_idx_path):
++    #     with open(class_to_idx_path, "w") as fh:
++    #         json.dump(class_to_idx, fh)
++    # return images_and_targets, class_to_idx
+     
+ 
+ class ParserImageInHDF5(Parser):
+@@ -77,14 +84,16 @@ class ParserImageInHDF5(Parser):
+     def __init__(
+             self,
+             hdf5_path,
+-            class_map=''):
++            class_map='',
++            train_split_percentage=100):
+         super().__init__()
+ 
+         self.hdf5_path = hdf5_path
+         class_to_idx = None
+         if class_map:
++            raise AssertionError
+             class_to_idx = load_class_map(class_map, hdf5_path)
+-        self.samples, self.class_to_idx = find_images_and_targets_in_hdf5(hdf5_path, class_to_idx=class_to_idx)
++        self.samples, self.class_to_idx = find_images_and_targets_in_hdf5(hdf5_path, class_to_idx=class_to_idx, train_split_percentage=train_split_percentage)
+         if len(self.samples) == 0:
+             raise RuntimeError(
+                 f'Found 0 images in subfolders of {hdf5_path}. Supported image extensions are {", ".join(IMG_EXTENSIONS)}')
+diff --git a/timm/models/resnet_trf_frac.py b/timm/models/resnet_trf_frac.py
+index e9bc1ee..b8b1d58 100644
+--- a/timm/models/resnet_trf_frac.py
++++ b/timm/models/resnet_trf_frac.py
+@@ -14,6 +14,8 @@ import torch.nn.functional as F
+ 
+ import einops
+ 
++import copy
++
+ from timm.data import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
+ from .helpers import build_model_with_cfg
+ from .layers import DropBlock2d, DropPath, AvgPool2dSame, BlurPool2d, create_attn, create_classifier
+@@ -23,6 +25,7 @@ from .helper_modules.transformer import Transformer
+ 
+ __all__ = ['ResNetTrfFractal', 'BasicBlock', 'Bottleneck']  # model_registry will add each entrypoint fn to this
+ 
++
+     
+ trf_1_stage_cfg = {
+     "depth": 2,
+@@ -33,9 +36,11 @@ trf_1_stage_cfg = {
+     "dropout": 0.05,
+     "emb_dropout": 0.05,
+     "pool": "token_0",
+-    "just_values": True,
++    "just_values": False,
+     "no_ffn": False,
+ }
++trf_1_stage_just_v_cfg = copy.copy(trf_1_stage_cfg)
++trf_1_stage_just_v_cfg["just_values"] = True
+ 
+ def _cfg(url='', **kwargs):
+     return {
+@@ -49,6 +54,14 @@ def _cfg(url='', **kwargs):
+ 
+ 
+ default_cfgs = {
++    'resnet50_s32_trf_frac_just_v_1': _cfg(
++        url='',
++        interpolation='bicubic'),
++
++    'resnet50_s16_trf_frac_just_v_1': _cfg(
++        url='',
++        interpolation='bicubic'),
++        
+     'resnet50_s32_trf_frac_1': _cfg(
+         url='',
+         interpolation='bicubic'),
+@@ -787,6 +800,24 @@ def _create_resnet(variant, pretrained=False, **kwargs):
+ #     return _create_resnet('resnet26d', pretrained, **model_args)
+ 
+ 
++@register_model
++def resnet50_s32_trf_frac_just_v_1(pretrained=False, **kwargs):
++    kwargs["output_stride"] = 32
++
++    trf_stage_cfg = trf_1_stage_just_v_cfg
++
++    model_args = dict(block=Bottleneck, layers=[3, 4, 6, 3], trf_stage_cfg=trf_stage_cfg,  **kwargs)
++    return _create_resnet('resnet50_s32_trf_frac_just_v_1', pretrained, **model_args)
++
++
++@register_model
++def resnet50_s16_trf_frac_just_v_1(pretrained=False, **kwargs):
++    kwargs["output_stride"] = 16
++
++    trf_stage_cfg = trf_1_stage_just_v_cfg
++
++    model_args = dict(block=Bottleneck, layers=[3, 4, 6, 3], trf_stage_cfg=trf_stage_cfg,  **kwargs)
++    return _create_resnet('resnet50_s16_trf_frac_just_v_1', pretrained, **model_args)
+ @register_model
+ def resnet50_s32_trf_frac_1(pretrained=False, **kwargs):
+     kwargs["output_stride"] = 32
+@@ -804,7 +835,7 @@ def resnet50_s16_trf_frac_1(pretrained=False, **kwargs):
+     trf_stage_cfg = trf_1_stage_cfg
+ 
+     model_args = dict(block=Bottleneck, layers=[3, 4, 6, 3], trf_stage_cfg=trf_stage_cfg,  **kwargs)
+-    return _create_resnet('resnet50_s32_trf_frac_1', pretrained, **model_args)
++    return _create_resnet('resnet50_s16_trf_frac_1', pretrained, **model_args)
+ 
+ 
+ # @register_model
+diff --git a/timm/utils/random.py b/timm/utils/random.py
+index a967998..b271641 100644
+--- a/timm/utils/random.py
++++ b/timm/utils/random.py
+@@ -7,3 +7,6 @@ def random_seed(seed=42, rank=0):
+     torch.manual_seed(seed + rank)
+     np.random.seed(seed + rank)
+     random.seed(seed + rank)
++
++def shuffle(x):
++    random.shuffle(x)
+\ No newline at end of file
+diff --git a/train.py b/train.py
+index ac6056e..a524059 100755
+--- a/train.py
++++ b/train.py
+@@ -28,6 +28,8 @@ import torch.nn as nn
+ import torchvision.utils
+ from torch.nn.parallel import DistributedDataParallel as NativeDDP
+ 
++import wandb
++
+ from timm.data import create_dataset, create_loader, resolve_data_config, Mixup, FastCollateMixup, AugMixDataset
+ from timm.models import create_model, safe_model_name, resume_checkpoint, load_checkpoint,\
+     convert_splitbn_model, model_parameters
+@@ -66,6 +68,7 @@ parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
+ 
+ # TODO <------------------------------------
+ DEFAULT_DATA_DIR = "/home/nipopovic/Projects/hl_task_prediction/big_storage/data_sets_shortcut/ImageNet/tmp_hdf5"
++TRAIN_SET_PERCENTAGE = 100
+ DATASET = "hdf5" # ""
+ DEFAULT_MODEL = "resnet50_s32_trf_frac_1"
+ DEFAULT_MODEL = "resnet34"
+@@ -82,6 +85,8 @@ parser.add_argument('--dataset', '-d', metavar='NAME', default=DATASET,
+                     help='dataset type (default: ImageFolder/ImageTar if empty)')
+ parser.add_argument('--train-split', metavar='NAME', default='train',
+                     help='dataset train split (default: train)')
++parser.add_argument('--train-split-percentage', metavar='PERC', type=int, default=TRAIN_SET_PERCENTAGE,
++                    help='percentage of training set to use (for low-data learning experiments)')
+ parser.add_argument('--val-split', metavar='NAME', default='validation',
+                     help='dataset validation split (default: validation)')
+ parser.add_argument('--model', default=DEFAULT_MODEL, type=str, metavar='MODEL',
+@@ -318,6 +323,10 @@ def main():
+     
+     setup_default_logging(log_path=os.path.join(output_dir, "print_log.txt"))
+ 
++    print("Argument parser collected the following arguments:")
++    print(args)
++    print("\n")
++
+     args.prefetcher = not args.no_prefetcher
+     args.distributed = False
+     if 'WORLD_SIZE' in os.environ:
+@@ -482,7 +491,8 @@ def main():
+     dataset_train = create_dataset(
+         args.dataset,
+         root=args.data_dir, split=args.train_split, is_training=True,
+-        batch_size=args.batch_size, repeats=args.epoch_repeats)
++        batch_size=args.batch_size, repeats=args.epoch_repeats,
++        train_split_percentage=args.train_split_percentage)
+     dataset_eval = create_dataset(
+         args.dataset, root=args.data_dir, split=args.val_split, is_training=False, batch_size=args.batch_size)
+ 
+@@ -588,6 +598,9 @@ def main():
+         with open(os.path.join(output_dir, 'args.yaml'), 'w') as f:
+             f.write(args_text)
+ 
++        # TODO Making wandb logger
++        wandb.init(project="ImageNet", name=exp_name)
++        wandb.watch(model)
+     try:
+         for epoch in range(start_epoch, num_epochs):
+             if args.distributed and hasattr(loader_train.sampler, 'set_epoch'):
+@@ -646,6 +659,8 @@ def train_one_epoch(
+     batch_time_m = AverageMeter()
+     data_time_m = AverageMeter()
+     losses_m = AverageMeter()
++    top1_m = AverageMeter()
++    top5_m = AverageMeter()
+ 
+     model.train()
+ 
+@@ -653,6 +668,10 @@ def train_one_epoch(
+     last_idx = len(loader) - 1
+     num_updates = epoch * len(loader)
+     for batch_idx, (input, target) in enumerate(loader):
++        # TODO <-------------- REMOVE
++        if batch_idx > 51:
++            break
++        # TODO <-------------- REMOVE
+         last_batch = batch_idx == last_idx
+         data_time_m.update(time.time() - end)
+         if not args.prefetcher:
+@@ -665,10 +684,14 @@ def train_one_epoch(
+         with amp_autocast():
+             output = model(input)
+             loss = loss_fn(output, target)
++            acc1, acc5 = accuracy(output, target, topk=(1, 5))
+ 
+         if not args.distributed:
+             losses_m.update(loss.item(), input.size(0))
+ 
++            top1_m.update(acc1.item(), output.size(0))
++            top5_m.update(acc5.item(), output.size(0))
++
+         optimizer.zero_grad()
+         if loss_scaler is not None:
+             loss_scaler(
+@@ -698,6 +721,11 @@ def train_one_epoch(
+                 reduced_loss = reduce_tensor(loss.data, args.world_size)
+                 losses_m.update(reduced_loss.item(), input.size(0))
+ 
++                acc1 = reduce_tensor(acc1, args.world_size)
++                acc5 = reduce_tensor(acc5, args.world_size)
++                top1_m.update(acc1.item(), output.size(0))
++                top5_m.update(acc5.item(), output.size(0))
++
+             if args.local_rank == 0:
+                 _logger.info(
+                     'Train: {} [{:>4d}/{} ({:>3.0f}%)]  '
+@@ -715,6 +743,14 @@ def train_one_epoch(
+                         rate_avg=input.size(0) * args.world_size / batch_time_m.avg,
+                         lr=lr,
+                         data_time=data_time_m))
++                
++                # Log losses/metrics to wandb at appropriate steps
++                wandb.log({
++                    "misc/lr": lr,
++                    "train/loss/step": losses_m.avg,
++                    "train/acc1/step": top1_m.avg,
++                    "train/acc5/step": top5_m.avg,
++                })
+ 
+                 if args.save_images and output_dir:
+                     torchvision.utils.save_image(
+@@ -736,6 +772,13 @@ def train_one_epoch(
+     if hasattr(optimizer, 'sync_lookahead'):
+         optimizer.sync_lookahead()
+ 
++    # Log losses/metrics at the end of the epoch               
++    wandb.log({
++        "train/loss": losses_m.avg,
++        "train/acc1": top1_m.avg,
++        "train/acc5": top5_m.avg,
++    })
++
+     return OrderedDict([('loss', losses_m.avg)])
+ 
+ 
+@@ -751,6 +794,10 @@ def validate(model, loader, loss_fn, args, amp_autocast=suppress, log_suffix='')
+     last_idx = len(loader) - 1
+     with torch.no_grad():
+         for batch_idx, (input, target) in enumerate(loader):
++            # TODO <-------------- REMOVE
++            if batch_idx > 51:
++                break
++            # TODO <-------------- REMOVE
+             last_batch = batch_idx == last_idx
+             if not args.prefetcher:
+                 input = input.cuda()
+@@ -797,7 +844,13 @@ def validate(model, loader, loss_fn, args, amp_autocast=suppress, log_suffix='')
+                     'Acc@5: {top5.val:>7.4f} ({top5.avg:>7.4f})'.format(
+                         log_name, batch_idx, last_idx, batch_time=batch_time_m,
+                         loss=losses_m, top1=top1_m, top5=top5_m))
+-
++            
++    # Log losses/metrics at the end of the epoch               
++    wandb.log({
++        "train/loss": losses_m.avg,
++        "train/acc1": top1_m.avg,
++        "train/acc5": top5_m.avg,
++    })
+     metrics = OrderedDict([('loss', losses_m.avg), ('top1', top1_m.avg), ('top5', top5_m.avg)])
+ 
+     return metrics
