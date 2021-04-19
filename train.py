@@ -67,31 +67,52 @@ parser.add_argument('-c', '--config', default='', type=str, metavar='FILE',
 parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
 
 # TODO <------------------------------------
-DEFAULT_DATA_DIR = "/home/nipopovic/Projects/hl_task_prediction/big_storage/data_sets_shortcut/ImageNet/tmp_hdf5"
 DEFAULT_DATA_DIR = "/cluster/work/cvl/nipopovic/data/ImageNet/2012-1k"
 TRAIN_SET_PERCENTAGE = 100
 DATASET = "hdf5" # ""
-DEFAULT_OUTPUT_DIR = "/home/nipopovic/Projects/hl_task_prediction/big_storage/experiment_logs_shortcut/tmp"
 DEFAULT_OUTPUT_DIR = "/cluster/work/cvl/nipopovic/experiments/ImageNet/"
 
-DEFAULT_MODEL = "resnet50_s32_trf_frac_just_v_1" # "resnet50_s32_trf_frac_1"
-DEFAULT_BATCH_SIZE = 64
-NUM_WORKERS = 8
+MODEL = "resnet34_s32_trf_frac_just_v_1" # "resnet50_s32_trf_frac_1"
+DEFAULT_BATCH_SIZE = 128
 
-# TODO RESNET50 SPECIFIC ARG RECOMMENDATION
-LR_SCHED = "cosine"
+# TODO ARCH SPECIFIC ARG RECOMMENDATION
 EPOCHS = 200
 LR = 0.05
+LR_SCHED = "cosine"
+PIN_MEMORY = True
+NUM_WORKERS = 10
 AMP = False
+
+AA = None
+AUG_SPLITS = 0
+JSD = False
+REPROB = 0.3
 REMODE = "pixel"
-REPROB = 0.6
-AUG_SPLITS = 3
-AA = "rand-m9-mstd0.5-inc1"
-RESPLIT = True
-SPLIT_BN = True
-JSD = True
-DIST_BN = "reduce"
+RESPLIT = False
+SYNC_BN = True
+SPLIT_BN = False
+DIST_BN = ""
+
+# AA = "rand-m9-mstd0.5-inc1"
+# AUG_SPLITS = 3
+# JSD = True
+# REPROB = 0.6
+# REMODE = "pixel"
+# RESPLIT = True
+# SYNC_BN = False
+# SPLIT_BN = True
+# DIST_BN = "reduce"
+
 # TODO <------------------------------------
+
+# snapo config
+if True:
+    DEFAULT_DATA_DIR = "/home/nipopovic/Projects/hl_task_prediction/big_storage/data_sets_shortcut/ImageNet/2012-1k"
+    DEFAULT_OUTPUT_DIR = "/home/nipopovic/Projects/hl_task_prediction/big_storage/experiment_logs_shortcut/tmp"
+    #MODEL = "resnet18"
+    DEFAULT_BATCH_SIZE = 32
+
+
 
 # Dataset / Model parameters
 parser.add_argument('--data_dir', metavar='DIR',
@@ -105,7 +126,7 @@ parser.add_argument('--train-split-percentage', metavar='PERC', type=int, defaul
                     help='percentage of training set to use (for low-data learning experiments)')
 parser.add_argument('--val-split', metavar='NAME', default='validation',
                     help='dataset validation split (default: validation)')
-parser.add_argument('--model', default=DEFAULT_MODEL, type=str, metavar='MODEL',
+parser.add_argument('--model', default=MODEL, type=str, metavar='MODEL',
                     help='Name of model to train (default: "countception"')
 parser.add_argument('--pretrained', action='store_true', default=False,
                     help='Start with pretrained version of specified network (if avail)')
@@ -250,7 +271,7 @@ parser.add_argument('--bn-momentum', type=float, default=None,
                     help='BatchNorm momentum override (if not None)')
 parser.add_argument('--bn-eps', type=float, default=None,
                     help='BatchNorm epsilon override (if not None)')
-parser.add_argument('--sync-bn', action='store_true',
+parser.add_argument('--sync-bn', action='store_true', default=SYNC_BN,
                     help='Enable NVIDIA Apex or Torch synchronized BatchNorm.')
 parser.add_argument('--dist-bn', type=str, default=DIST_BN,
                     help='Distribute BatchNorm stats between nodes after each epoch ("broadcast", "reduce", or "")')
@@ -272,8 +293,8 @@ parser.add_argument('--log-interval', type=int, default=50, metavar='N',
                     help='how many batches to wait before logging training status')
 parser.add_argument('--recovery-interval', type=int, default=0, metavar='N',
                     help='how many batches to wait before writing recovery checkpoint')
-parser.add_argument('--checkpoint-hist', type=int, default=10, metavar='N',
-                    help='number of checkpoints to keep (default: 10)')
+parser.add_argument('--checkpoint-hist', type=int, default=3, metavar='N',
+                    help='number of checkpoints to keep (default: 3)')
 parser.add_argument('-j', '--workers', type=int, default=NUM_WORKERS, metavar='N',
                     help='how many training processes to use (default: 1)')
 parser.add_argument('--save-images', action='store_true', default=False,
@@ -286,7 +307,7 @@ parser.add_argument('--native-amp', action='store_true', default=False,
                     help='Use Native Torch AMP mixed precision')
 parser.add_argument('--channels-last', action='store_true', default=False,
                     help='Use channels_last memory layout')
-parser.add_argument('--pin-mem', action='store_true', default=False,
+parser.add_argument('--pin-mem', action='store_true', default=PIN_MEMORY,
                     help='Pin CPU memory in DataLoader for more efficient (sometimes) transfer to GPU.')
 parser.add_argument('--no-prefetcher', action='store_true', default=False,
                     help='disable fast prefetcher')

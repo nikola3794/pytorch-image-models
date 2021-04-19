@@ -54,6 +54,22 @@ def _cfg(url='', **kwargs):
 
 
 default_cfgs = {
+    'resnet34_s32_trf_frac_just_v_1': _cfg(
+        url='',
+        interpolation='bicubic'),
+
+    'resnet34_s16_trf_frac_just_v_1': _cfg(
+        url='',
+        interpolation='bicubic'),
+        
+    'resnet34_s32_trf_frac_1': _cfg(
+        url='',
+        interpolation='bicubic'),
+
+    'resnet34_s16_trf_frac_1': _cfg(
+        url='',
+        interpolation='bicubic'),
+
     'resnet50_s32_trf_frac_just_v_1': _cfg(
         url='',
         interpolation='bicubic'),
@@ -675,8 +691,9 @@ class ResNetTrfFractal(nn.Module):
                 nn.init.constant_(m.weight, 1.)
                 nn.init.constant_(m.bias, 0.)
             elif isinstance(m, nn.LayerNorm):
-                nn.init.zeros_(m.bias)
-                nn.init.ones_(m.weight)
+                nn.init.constant_(m.weight, 1.)
+                nn.init.constant_(m.bias, 0.)
+            # TODO Initialize linear layers of the transformer?
         if zero_init_last_bn:
             for m in self.modules():
                 if hasattr(m, 'zero_init_last_bn'):
@@ -798,6 +815,46 @@ def _create_resnet(variant, pretrained=False, **kwargs):
 #     """
 #     model_args = dict(block=Bottleneck, layers=[2, 2, 2, 2], stem_width=32, stem_type='deep', avg_down=True, **kwargs)
 #     return _create_resnet('resnet26d', pretrained, **model_args)
+
+
+@register_model
+def resnet34_s32_trf_frac_just_v_1(pretrained=False, **kwargs):
+    kwargs["output_stride"] = 32
+
+    trf_stage_cfg = trf_1_stage_just_v_cfg
+
+    model_args = dict(block=BasicBlock, layers=[3, 4, 6, 3], trf_stage_cfg=trf_stage_cfg, **kwargs)
+    return _create_resnet('resnet34_s32_trf_frac_just_v_1', pretrained, **model_args)
+
+
+@register_model
+def resnet34_s16_trf_frac_just_v_1(pretrained=False, **kwargs):
+    kwargs["output_stride"] = 16
+
+    trf_stage_cfg = trf_1_stage_just_v_cfg
+
+    model_args = dict(block=BasicBlock, layers=[3, 4, 6, 3], trf_stage_cfg=trf_stage_cfg, **kwargs)
+    return _create_resnet('resnet34_s16_trf_frac_just_v_1', pretrained, **model_args)
+@register_model
+def resnet34_s32_trf_frac_1(pretrained=False, **kwargs):
+    kwargs["output_stride"] = 32
+
+    trf_stage_cfg = trf_1_stage_cfg
+
+    model_args = dict(block=BasicBlock, layers=[3, 4, 6, 3], trf_stage_cfg=trf_stage_cfg, **kwargs)
+    return _create_resnet('resnet34_s32_trf_frac_1', pretrained, **model_args)
+
+
+@register_model
+def resnet34_s16_trf_frac_1(pretrained=False, **kwargs):
+    kwargs["output_stride"] = 16
+
+    trf_stage_cfg = trf_1_stage_cfg
+
+    model_args = dict(block=BasicBlock, layers=[3, 4, 6, 3], trf_stage_cfg=trf_stage_cfg, **kwargs)
+    return _create_resnet('resnet34_s16_trf_frac_1', pretrained, **model_args)
+
+# ...............................
 
 
 @register_model

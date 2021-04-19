@@ -108,6 +108,7 @@ class ImageDatasetHDF5(data.Dataset):
         return len(self.parser)
     
     def read_binary(self, rel_path):
+        # TODO Implementation 1 - open HDF5 file every time a data point is required
         hfile = None
         try:
             hfile = h5py.File(self.hdf5_path, 'r')
@@ -115,6 +116,8 @@ class ImageDatasetHDF5(data.Dataset):
         finally:
             if hfile is not None:
                 hfile.close()
+
+        # # TODO Implementation 2 - open HDF5 only the first time and keep it opened
         # if self.hf5_file_fh is None:
         #     self.hf5_file_fh = h5py.File(self.hdf5_path, 'r')
         # return self.hf5_file_fh[rel_path]['raw'][0]
