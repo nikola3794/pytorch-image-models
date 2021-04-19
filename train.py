@@ -73,6 +73,7 @@ DATASET = "hdf5" # ""
 DEFAULT_OUTPUT_DIR = "/cluster/work/cvl/nipopovic/experiments/ImageNet/"
 
 MODEL = "resnet34_s32_trf_frac_just_v_1" # "resnet50_s32_trf_frac_1"
+MODEL = "resnet34"
 DEFAULT_BATCH_SIZE = 128
 
 # TODO ARCH SPECIFIC ARG RECOMMENDATION
