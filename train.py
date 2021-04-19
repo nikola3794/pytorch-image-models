@@ -68,9 +68,9 @@ parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
 
 # TODO <------------------------------------
 DEFAULT_DATA_DIR = "/cluster/work/cvl/nipopovic/data/ImageNet/2012-1k"
-TRAIN_SET_PERCENTAGE = 100
+TRAIN_SET_PERCENTAGE = 20
 DATASET = "hdf5" # ""
-DEFAULT_OUTPUT_DIR = "/cluster/work/cvl/nipopovic/experiments/ImageNet/"
+DEFAULT_OUTPUT_DIR = "/cluster/work/cvl/nipopovic/experiments/ImageNet"
 
 MODEL = "resnet34_s32_trf_frac_just_v_1" # "resnet50_s32_trf_frac_1"
 #MODEL = "resnet34"
@@ -735,9 +735,6 @@ def train_one_epoch(
     last_idx = len(loader) - 1
     num_updates = epoch * len(loader)
     for batch_idx, (input, target) in enumerate(loader):
-        # TODO <--------------------------
-        if batch_idx == 10:
-            break
         last_batch = batch_idx == last_idx
         data_time_m.update(time.time() - end)
         if not args.prefetcher:
@@ -853,9 +850,6 @@ def validate(model, loader, loss_fn, args, amp_autocast=suppress, log_suffix='')
     last_idx = len(loader) - 1
     with torch.no_grad():
         for batch_idx, (input, target) in enumerate(loader):
-            # TODO <--------------------------
-            if batch_idx == 10:
-                break
             last_batch = batch_idx == last_idx
             if not args.prefetcher:
                 input = input.cuda()

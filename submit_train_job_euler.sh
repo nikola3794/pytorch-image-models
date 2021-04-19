@@ -2,7 +2,7 @@
 #BSUB -o /cluster/home/nipopovic/job_logs  # path to output file
 #BSUB -W 71:59 # HH:MM runtime
 #BSUB -n 16 # number of cpu cores
-#BSUB -R "rusage[mem=4000]" # MB per CPU core
+#BSUB -R "rusage[mem=8192]" # MB per CPU core
 #BSUB -R "rusage[ngpus_excl_p=4]" # number of GPU cores
 #BSUB -R "select[gpu_mtotal0>=10240]" # MB per GPU core
 
