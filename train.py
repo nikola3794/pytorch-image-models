@@ -73,7 +73,7 @@ DATASET = "hdf5" # ""
 DEFAULT_OUTPUT_DIR = "/cluster/work/cvl/nipopovic/experiments/ImageNet/"
 
 MODEL = "resnet34_s32_trf_frac_just_v_1" # "resnet50_s32_trf_frac_1"
-MODEL = "resnet34"
+#MODEL = "resnet34"
 DEFAULT_BATCH_SIZE = 128
 
 # TODO ARCH SPECIFIC ARG RECOMMENDATION
@@ -111,7 +111,7 @@ if False:
     DEFAULT_DATA_DIR = "/home/nipopovic/Projects/hl_task_prediction/big_storage/data_sets_shortcut/ImageNet/2012-1k"
     DEFAULT_OUTPUT_DIR = "/home/nipopovic/Projects/hl_task_prediction/big_storage/experiment_logs_shortcut/tmp"
     #MODEL = "resnet18"
-    DEFAULT_BATCH_SIZE = 32
+    DEFAULT_BATCH_SIZE = 2
 
 
 
@@ -733,6 +733,9 @@ def train_one_epoch(
     last_idx = len(loader) - 1
     num_updates = epoch * len(loader)
     for batch_idx, (input, target) in enumerate(loader):
+        # TODO <--------------------------
+        if batch_idx == 10:
+            break
         last_batch = batch_idx == last_idx
         data_time_m.update(time.time() - end)
         if not args.prefetcher:
@@ -848,6 +851,9 @@ def validate(model, loader, loss_fn, args, amp_autocast=suppress, log_suffix='')
     last_idx = len(loader) - 1
     with torch.no_grad():
         for batch_idx, (input, target) in enumerate(loader):
+            # TODO <--------------------------
+            if batch_idx == 10:
+                break
             last_batch = batch_idx == last_idx
             if not args.prefetcher:
                 input = input.cuda()
