@@ -81,7 +81,7 @@ EPOCHS = 200
 LR = 0.05
 LR_SCHED = "cosine"
 PIN_MEMORY = True
-NUM_WORKERS = 10
+NUM_WORKERS = 8
 AMP = False
 
 AA = None
@@ -582,7 +582,8 @@ def main():
         distributed=args.distributed,
         collate_fn=collate_fn,
         pin_memory=args.pin_mem,
-        use_multi_epochs_loader=args.use_multi_epochs_loader
+        use_multi_epochs_loader=args.use_multi_epochs_loader,
+        persistent_workers=False, # TODO On older torch versions this cannot be true when pin_memory is true
     )
 
     loader_eval = create_loader(
@@ -598,6 +599,7 @@ def main():
         distributed=args.distributed,
         crop_pct=data_config['crop_pct'],
         pin_memory=args.pin_mem,
+        persistent_workers=False, # TODO On older torch versions this cannot be true when pin_memory is true
     )
 
     # setup loss function
