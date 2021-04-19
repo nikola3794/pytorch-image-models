@@ -106,7 +106,7 @@ DIST_BN = ""
 # TODO <------------------------------------
 
 # snapo config
-if True:
+if False:
     DEFAULT_DATA_DIR = "/home/nipopovic/Projects/hl_task_prediction/big_storage/data_sets_shortcut/ImageNet/2012-1k"
     DEFAULT_OUTPUT_DIR = "/home/nipopovic/Projects/hl_task_prediction/big_storage/experiment_logs_shortcut/tmp"
     #MODEL = "resnet18"
