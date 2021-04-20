@@ -78,8 +78,13 @@ DEFAULT_BATCH_SIZE = 128
 
 # TODO ARCH SPECIFIC ARG RECOMMENDATION
 EPOCHS = 200
-LR = 0.05
-LR_SCHED = "cosine"
+OPT = "adamw" # adamw
+lr = 0.0001
+LR = lr # 0.05
+WARMUP_LR = lr # 0.0001
+WARMUP_EPOCHS = 1 # 3
+LR_SCHED = "step" #"cosine"
+
 PIN_MEMORY = True
 NUM_WORKERS = 8
 AMP = False
@@ -110,7 +115,7 @@ DIST_BN = ""
 if False:
     DEFAULT_DATA_DIR = "/home/nipopovic/Projects/hl_task_prediction/big_storage/data_sets_shortcut/ImageNet/2012-1k"
     DEFAULT_OUTPUT_DIR = "/home/nipopovic/Projects/hl_task_prediction/big_storage/experiment_logs_shortcut/tmp"
-    #MODEL = "resnet18"
+    MODEL = "resnet18"
     DEFAULT_BATCH_SIZE = 2
 
 
@@ -159,7 +164,7 @@ parser.add_argument('-vb', '--validation-batch-size-multiplier', type=int, defau
                     help='ratio of validation batch size to training batch size (default: 1)')
 
 # Optimizer parameters
-parser.add_argument('--opt', default='sgd', type=str, metavar='OPTIMIZER',
+parser.add_argument('--opt', default=OPT, type=str, metavar='OPTIMIZER',
                     help='Optimizer (default: "sgd"')
 parser.add_argument('--opt-eps', default=None, type=float, metavar='EPSILON',
                     help='Optimizer Epsilon (default: None, use opt default)')
@@ -190,7 +195,7 @@ parser.add_argument('--lr-cycle-mul', type=float, default=1.0, metavar='MULT',
                     help='learning rate cycle len multiplier (default: 1.0)')
 parser.add_argument('--lr-cycle-limit', type=int, default=1, metavar='N',
                     help='learning rate cycle limit')
-parser.add_argument('--warmup-lr', type=float, default=0.0001, metavar='LR',
+parser.add_argument('--warmup-lr', type=float, default=WARMUP_LR, metavar='LR',
                     help='warmup learning rate (default: 0.0001)')
 parser.add_argument('--min-lr', type=float, default=1e-5, metavar='LR',
                     help='lower lr bound for cyclic schedulers that hit 0 (1e-5)')
@@ -202,7 +207,7 @@ parser.add_argument('--start-epoch', default=None, type=int, metavar='N',
                     help='manual epoch number (useful on restarts)')
 parser.add_argument('--decay-epochs', type=float, default=30, metavar='N',
                     help='epoch interval to decay LR')
-parser.add_argument('--warmup-epochs', type=int, default=3, metavar='N',
+parser.add_argument('--warmup-epochs', type=int, default=WARMUP_EPOCHS, metavar='N',
                     help='epochs to warmup LR, if scheduler supports')
 parser.add_argument('--cooldown-epochs', type=int, default=10, metavar='N',
                     help='epochs to cooldown LR at min_lr, after cyclic schedule ends')

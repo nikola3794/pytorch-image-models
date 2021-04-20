@@ -835,6 +835,8 @@ def resnet34_s16_trf_frac_just_v_1(pretrained=False, **kwargs):
 
     model_args = dict(block=BasicBlock, layers=[3, 4, 6, 3], trf_stage_cfg=trf_stage_cfg, **kwargs)
     return _create_resnet('resnet34_s16_trf_frac_just_v_1', pretrained, **model_args)
+
+    
 @register_model
 def resnet34_s32_trf_frac_1(pretrained=False, **kwargs):
     kwargs["output_stride"] = 32
