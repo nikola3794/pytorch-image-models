@@ -28,5 +28,5 @@ pwd
 #export OMP_NUM_THREADS=8
 
 # python -u run_experiment/imitation_learning/main.py "$@"
-python training.py
+python train.py
 # CUDA_LAUNCH_BLOCKING=1 for debugging cuda errors

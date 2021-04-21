@@ -72,32 +72,39 @@ TRAIN_SET_PERCENTAGE = 20
 DATASET = "hdf5" # ""
 DEFAULT_OUTPUT_DIR = "/cluster/work/cvl/nipopovic/experiments/ImageNet"
 
-MODEL = "resnet34_s32_trf_frac_just_v_1" # "resnet50_s32_trf_frac_1"
+MODEL = "resnet34_s32_trf_frac_1" # "resnet50_s32_trf_frac_1"
 #MODEL = "resnet34"
 DEFAULT_BATCH_SIZE = 128
 
 # TODO ARCH SPECIFIC ARG RECOMMENDATION
 EPOCHS = 200
 OPT = "adamw" # adamw
+WD = 0.0001
 lr = 0.0001
 LR = lr # 0.05
-WARMUP_LR = lr # 0.0001
-WARMUP_EPOCHS = 1 # 3
-LR_SCHED = "step" #"cosine"
+WARMUP_LR = lr / 100.0 # 0.0001
+WARMUP_EPOCHS = 5 # 3
+LR_SCHED = "cosine" #"cosine"
 
-PIN_MEMORY = True
-NUM_WORKERS = 8
-AMP = False
+# Random erasing
+REPROB = 0.25
+REMODE = "pixel"
+RESPLIT = False
+# Cutmix & mixup
+MIXUP_A = 0.#1.0
+CUTMIX_A = 0.#1.0
+MIX_RPOB = 1.0#0.25
 
 AA = None
 AUG_SPLITS = 0
 JSD = False
-REPROB = 0.3
-REMODE = "pixel"
-RESPLIT = False
 SYNC_BN = True
 SPLIT_BN = False
 DIST_BN = ""
+
+PIN_MEMORY = True
+NUM_WORKERS = 8
+AMP = False
 
 # AA = "rand-m9-mstd0.5-inc1"
 # AUG_SPLITS = 3
@@ -114,8 +121,10 @@ DIST_BN = ""
 # snapo config
 if False:
     DEFAULT_DATA_DIR = "/home/nipopovic/Projects/hl_task_prediction/big_storage/data_sets_shortcut/ImageNet/2012-1k"
+    DATASET = "hdf5"
     DEFAULT_OUTPUT_DIR = "/home/nipopovic/Projects/hl_task_prediction/big_storage/experiment_logs_shortcut/tmp"
     MODEL = "resnet18"
+    MODEL = "resnet34_s32_trf_frac_1"
     DEFAULT_BATCH_SIZE = 2
 
 
@@ -172,7 +181,7 @@ parser.add_argument('--opt-betas', default=None, type=float, nargs='+', metavar=
                     help='Optimizer Betas (default: None, use opt default)')
 parser.add_argument('--momentum', type=float, default=0.9, metavar='M',
                     help='Optimizer momentum (default: 0.9)')
-parser.add_argument('--weight-decay', type=float, default=0.0001,
+parser.add_argument('--weight-decay', type=float, default=WD,
                     help='weight decay (default: 0.0001)')
 parser.add_argument('--clip-grad', type=float, default=None, metavar='NORM',
                     help='Clip gradient norm (default: None, no clipping)')
@@ -243,13 +252,13 @@ parser.add_argument('--recount', type=int, default=1,
                     help='Random erase count (default: 1)')
 parser.add_argument('--resplit', action='store_true', default=RESPLIT,
                     help='Do not random erase first (clean) augmentation split')
-parser.add_argument('--mixup', type=float, default=0.0,
+parser.add_argument('--mixup', type=float, default=MIXUP_A,
                     help='mixup alpha, mixup enabled if > 0. (default: 0.)')
-parser.add_argument('--cutmix', type=float, default=0.0,
+parser.add_argument('--cutmix', type=float, default=CUTMIX_A,
                     help='cutmix alpha, cutmix enabled if > 0. (default: 0.)')
 parser.add_argument('--cutmix-minmax', type=float, nargs='+', default=None,
                     help='cutmix min/max ratio, overrides alpha and enables cutmix if set (default: None)')
-parser.add_argument('--mixup-prob', type=float, default=1.0,
+parser.add_argument('--mixup-prob', type=float, default=MIX_RPOB,
                     help='Probability of performing mixup or cutmix when either/both is enabled')
 parser.add_argument('--mixup-switch-prob', type=float, default=0.5,
                     help='Probability of switching to cutmix when both mixup and cutmix enabled')

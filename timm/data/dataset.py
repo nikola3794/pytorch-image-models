@@ -28,9 +28,10 @@ class ImageDataset(data.Dataset):
             class_map='',
             load_bytes=False,
             transform=None,
+            train_split_percentage=100,
     ):
         if parser is None or isinstance(parser, str):
-            parser = create_parser(parser or '', root=root, class_map=class_map)
+            parser = create_parser(parser or '', root=root, class_map=class_map, train_split_percentage=train_split_percentage)
         self.parser = parser
         self.load_bytes = load_bytes
         self.transform = transform

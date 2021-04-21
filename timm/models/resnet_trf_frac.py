@@ -18,29 +18,43 @@ import copy
 
 from timm.data import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
 from .helpers import build_model_with_cfg
-from .layers import DropBlock2d, DropPath, AvgPool2dSame, BlurPool2d, create_attn, create_classifier
+from .layers import DropBlock2d, DropPath, AvgPool2dSame, BlurPool2d, create_attn, create_classifier, trunc_normal_
 from .registry import register_model
 
-from .helper_modules.transformer import Transformer
+from .helper_modules.transformer_timm import Transformer
 
 __all__ = ['ResNetTrfFractal', 'BasicBlock', 'Bottleneck']  # model_registry will add each entrypoint fn to this
 
 
-    
+# trf_1_stage_cfg = {
+#     "depth": 2,
+#     "token_dim": 512,
+#     "heads": 8,
+#     "dim_head": 64,
+#     "mlp_dim": 1024, #2048
+#     "dropout": 0.05,
+#     "emb_dropout": 0.05,
+#     "pool": "token_0",
+#     "just_values": False,
+#     "no_ffn": False,
+# }
 trf_1_stage_cfg = {
+    "embed_dim": 512,
     "depth": 2,
-    "token_dim": 512,
-    "heads": 8,
-    "dim_head": 64,
-    "mlp_dim": 1024, #2048
-    "dropout": 0.05,
-    "emb_dropout": 0.05,
-    "pool": "token_0",
-    "just_values": False,
-    "no_ffn": False,
+    "num_heads": 8,
+    "mlp_ratio": 3.,
+    "qkv_bias": False,
+    "qk_scale": None, # Manual scale factor of q*k.T, instead of automatic
+    "drop_rate": 0.1, # Embedding dropout rate + MLP dropout rate
+    "attn_drop_rate": 0.0, # dropout(q*k.T), before q*k.T is used to calculate values
+    "drop_path_rate": 0.0, # Stochastic depth rate
+    "norm_layer": nn.LayerNorm, # LayerNorm by default
+    "act_layer": nn.GELU,
+    "weight_init": "", # Weight init scheme. Default chosen.
+    "just_v": False, # If true --> key = value, query = value
 }
 trf_1_stage_just_v_cfg = copy.copy(trf_1_stage_cfg)
-trf_1_stage_just_v_cfg["just_values"] = True
+trf_1_stage_just_v_cfg["just_v"] = True
 
 def _cfg(url='', **kwargs):
     return {
@@ -650,10 +664,10 @@ class ResNetTrfFractal(nn.Module):
         
         # Layer which reduces encoders feature map to the appropriate transformer token dimensions
         # Transformers input token dimensions is euqal to (channels * patchsize^2) (here patchsize=1)
-        if self.num_features != trf_stage_cfg["token_dim"]:
+        if self.num_features != trf_stage_cfg["embed_dim"]:
             self.to_patch_embedding = nn.Conv2d(
                 in_channels=self.num_features, 
-                out_channels=trf_stage_cfg["token_dim"], 
+                out_channels=trf_stage_cfg["embed_dim"], 
                 kernel_size=1, 
                 stride=1, 
                 padding=0, 
@@ -676,24 +690,22 @@ class ResNetTrfFractal(nn.Module):
         self.transformers = {}
         self.pos_encodings = {}
         for i in self.stages:
-            self.transformers[i] = Transformer(cfg=trf_stage_cfg)
-            self.pos_encodings[i] = nn.Parameter(torch.randn(1, trf_stage_cfg["token_dim"], int(i), int(i)))
+            self.transformers[i] = Transformer(**trf_stage_cfg)
+            self.pos_encodings[i] = nn.Parameter(torch.randn(1, trf_stage_cfg["embed_dim"], int(i), int(i)))
+            trunc_normal_(self.pos_encodings[i], std=.02)
         self.transformers = nn.ModuleDict(self.transformers)
         self.pos_encodings = nn.ParameterDict(self.pos_encodings)
 
         # Head (Pooling and Classifier)
-        _, self.fc = create_classifier(trf_stage_cfg["token_dim"], self.num_classes, pool_type=global_pool)
-
+        _, self.fc = create_classifier(trf_stage_cfg["embed_dim"], self.num_classes, pool_type=global_pool)
+        
+        # randomly initialize resnet part ... transformer initialized in its own class
         for n, m in self.named_modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
             elif isinstance(m, nn.BatchNorm2d):
                 nn.init.constant_(m.weight, 1.)
                 nn.init.constant_(m.bias, 0.)
-            elif isinstance(m, nn.LayerNorm):
-                nn.init.constant_(m.weight, 1.)
-                nn.init.constant_(m.bias, 0.)
-            # TODO Initialize linear layers of the transformer?
         if zero_init_last_bn:
             for m in self.modules():
                 if hasattr(m, 'zero_init_last_bn'):
@@ -743,8 +755,7 @@ class ResNetTrfFractal(nn.Module):
             x = x + pos_encoding
 
             # Apply transformer (B H/2 W/2, 4, C) --> (B H/2 W/2, C)
-            trf_output = self.transformers[stage](x=x, pos_embedding=None, return_intermediate=True)
-            x = trf_output["output"]
+            x = self.transformers[stage](x=x)
 
             # Rearange (B H/2 W/2, C) --> (B, C, H/2, W/2)
             assert ((h_dim % step) == 0) and ((w_dim % step) == 0)
