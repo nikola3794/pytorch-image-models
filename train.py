@@ -122,7 +122,7 @@ AMP = False
 # snapo config
 if False:
     DEFAULT_DATA_DIR = "/home/nipopovic/Projects/hl_task_prediction/big_storage/data_sets_shortcut/ImageNet/2012-1k"
-    DATASET = "hdf5"
+    DATASET = ""
     DEFAULT_OUTPUT_DIR = "/home/nipopovic/Projects/hl_task_prediction/big_storage/experiment_logs_shortcut/tmp"
     MODEL = "resnet18"
     MODEL = "resnet34_s32_trf_frac_1"

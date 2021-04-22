@@ -28,7 +28,7 @@ def find_images_and_targets(folder, types=IMG_EXTENSIONS, class_to_idx=None, lea
     if os.path.isfile(samples_path) and os.path.isfile(class_to_idx_path):
         with open(samples_path, "r") as fh:
             images_and_targets = json.load(fh)
-            images_and_targets = [tuple(x) for x in images_and_targets]
+            images_and_targets = [(os.path.join(folder, x[0]), x[1]) for x in images_and_targets]
         with open(class_to_idx_path, "r") as fh:
             class_to_idx = json.load(fh)
 

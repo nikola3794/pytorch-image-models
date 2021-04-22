@@ -22,7 +22,7 @@ echo "CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES}"
 
 echo "Number of CPU threads/core: $(nproc --all)"
 
-tar -I pigz -xvf /cluster/work/cvl/yawli/data/ILSVRC2012.tar.gz -C ${TMPDIR}/
+#tar -I pigz -xvf /cluster/work/cvl/yawli/data/ILSVRC2012.tar.gz -C ${TMPDIR}/
 
 # Set paths
 PROJECT_ROOT_DIR=/cluster/project/cvl/nipopovic/code/pytorch-image-models
