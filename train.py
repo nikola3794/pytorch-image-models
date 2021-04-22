@@ -78,10 +78,10 @@ MODEL = "resnet34_s32_trf_frac_1" # "resnet50_s32_trf_frac_1"
 DEFAULT_BATCH_SIZE = 128
 
 # TODO ARCH SPECIFIC ARG RECOMMENDATION
-EPOCHS = 200
+EPOCHS = 300
 OPT = "adamw" # adamw
-WD = 0.0001
-lr = 0.0001
+WD = 0.01
+lr = 0.001
 LR = lr # 0.05
 WARMUP_LR = lr / 100.0 # 0.0001
 WARMUP_EPOCHS = 5 # 3
