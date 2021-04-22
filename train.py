@@ -57,92 +57,29 @@ except AttributeError:
 torch.backends.cudnn.benchmark = True
 _logger = logging.getLogger('train')
 
+YAML_CONFIG_PATH = "/srv/beegfs02/scratch/hl_task_prediction/data/nikola/code/pytorch-image-models/submit_to_cluster/params_debug.yaml"
+
 # The first arg parser parses out only the --config argument, this argument is used to
 # load a yaml file containing key-values that override the defaults for the main parser below
 config_parser = parser = argparse.ArgumentParser(description='Training Config', add_help=False)
-parser.add_argument('-c', '--config', default='', type=str, metavar='FILE',
+parser.add_argument('-c', '--config', default=YAML_CONFIG_PATH, type=str, metavar='FILE',
                     help='YAML config file specifying default arguments')
 
 
 parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
-
-# TODO <------------------------------------
-DEFAULT_DATA_DIR = "/cluster/work/cvl/nipopovic/data/ImageNet/2012-1k"
-DEFAULT_DATA_DIR = ""
-TRAIN_SET_PERCENTAGE = 20
-DATASET = "" # ""
-DEFAULT_OUTPUT_DIR = "/cluster/work/cvl/nipopovic/experiments/ImageNet"
-
-MODEL = "resnet34_s32_trf_frac_1" # "resnet50_s32_trf_frac_1"
-#MODEL = "resnet34"
-DEFAULT_BATCH_SIZE = 128
-
-# TODO ARCH SPECIFIC ARG RECOMMENDATION
-EPOCHS = 300
-OPT = "adamw" # adamw
-WD = 0.01
-lr = 0.001
-LR = lr # 0.05
-WARMUP_LR = lr / 100.0 # 0.0001
-WARMUP_EPOCHS = 5 # 3
-LR_SCHED = "cosine" #"cosine"
-
-# Random erasing
-REPROB = 0.25
-REMODE = "pixel"
-RESPLIT = False
-# Cutmix & mixup
-MIXUP_A = 0.#1.0
-CUTMIX_A = 0.#1.0
-MIX_RPOB = 1.0#0.25
-
-AA = None
-AUG_SPLITS = 0
-JSD = False
-SYNC_BN = True
-SPLIT_BN = False
-DIST_BN = ""
-
-PIN_MEMORY = True
-NUM_WORKERS = 8
-AMP = False
-
-# AA = "rand-m9-mstd0.5-inc1"
-# AUG_SPLITS = 3
-# JSD = True
-# REPROB = 0.6
-# REMODE = "pixel"
-# RESPLIT = True
-# SYNC_BN = False
-# SPLIT_BN = True
-# DIST_BN = "reduce"
-
-# TODO <------------------------------------
-
-# snapo config
-if False:
-    DEFAULT_DATA_DIR = "/home/nipopovic/Projects/hl_task_prediction/big_storage/data_sets_shortcut/ImageNet/2012-1k"
-    DATASET = ""
-    DEFAULT_OUTPUT_DIR = "/home/nipopovic/Projects/hl_task_prediction/big_storage/experiment_logs_shortcut/tmp"
-    MODEL = "resnet18"
-    MODEL = "resnet34_s32_trf_frac_1"
-    DEFAULT_BATCH_SIZE = 2
-
-
-
 # Dataset / Model parameters
 parser.add_argument('--data_dir', metavar='DIR',
                     help='path to dataset',
-                    default=DEFAULT_DATA_DIR)
-parser.add_argument('--dataset', '-d', metavar='NAME', default=DATASET,
+                    default='thois_must_be_passed')
+parser.add_argument('--dataset', '-d', metavar='NAME', default='',
                     help='dataset type (default: ImageFolder/ImageTar if empty)')
 parser.add_argument('--train-split', metavar='NAME', default='train',
                     help='dataset train split (default: train)')
-parser.add_argument('--train-split-percentage', metavar='PERC', type=int, default=TRAIN_SET_PERCENTAGE,
+parser.add_argument('--train-split-percentage', metavar='PERC', type=int, default=100,
                     help='percentage of training set to use (for low-data learning experiments)')
 parser.add_argument('--val-split', metavar='NAME', default='validation',
                     help='dataset validation split (default: validation)')
-parser.add_argument('--model', default=MODEL, type=str, metavar='MODEL',
+parser.add_argument('--model', default='resnet101', type=str, metavar='MODEL',
                     help='Name of model to train (default: "countception"')
 parser.add_argument('--pretrained', action='store_true', default=False,
                     help='Start with pretrained version of specified network (if avail)')
@@ -168,13 +105,13 @@ parser.add_argument('--std', type=float, nargs='+', default=None, metavar='STD',
                     help='Override std deviation of of dataset')
 parser.add_argument('--interpolation', default='', type=str, metavar='NAME',
                     help='Image resize interpolation type (overrides model)')
-parser.add_argument('-b', '--batch-size', type=int, default=DEFAULT_BATCH_SIZE, metavar='N',
+parser.add_argument('-b', '--batch-size', type=int, default=32, metavar='N',
                     help='input batch size for training (default: 32)')
 parser.add_argument('-vb', '--validation-batch-size-multiplier', type=int, default=1, metavar='N',
                     help='ratio of validation batch size to training batch size (default: 1)')
 
 # Optimizer parameters
-parser.add_argument('--opt', default=OPT, type=str, metavar='OPTIMIZER',
+parser.add_argument('--opt', default="sgd", type=str, metavar='OPTIMIZER',
                     help='Optimizer (default: "sgd"')
 parser.add_argument('--opt-eps', default=None, type=float, metavar='EPSILON',
                     help='Optimizer Epsilon (default: None, use opt default)')
@@ -182,7 +119,7 @@ parser.add_argument('--opt-betas', default=None, type=float, nargs='+', metavar=
                     help='Optimizer Betas (default: None, use opt default)')
 parser.add_argument('--momentum', type=float, default=0.9, metavar='M',
                     help='Optimizer momentum (default: 0.9)')
-parser.add_argument('--weight-decay', type=float, default=WD,
+parser.add_argument('--weight-decay', type=float, default=0.0001,
                     help='weight decay (default: 0.0001)')
 parser.add_argument('--clip-grad', type=float, default=None, metavar='NORM',
                     help='Clip gradient norm (default: None, no clipping)')
@@ -191,9 +128,9 @@ parser.add_argument('--clip-mode', type=str, default='norm',
 
 
 # Learning rate schedule parameters
-parser.add_argument('--sched', default=LR_SCHED, type=str, metavar='SCHEDULER',
+parser.add_argument('--sched', default="step", type=str, metavar='SCHEDULER',
                     help='LR scheduler (default: "step"')
-parser.add_argument('--lr', type=float, default=LR, metavar='LR',
+parser.add_argument('--lr', type=float, default=0.01, metavar='LR',
                     help='learning rate (default: 0.01)')
 parser.add_argument('--lr-noise', type=float, nargs='+', default=None, metavar='pct, pct',
                     help='learning rate noise on/off epoch percentages')
@@ -205,11 +142,11 @@ parser.add_argument('--lr-cycle-mul', type=float, default=1.0, metavar='MULT',
                     help='learning rate cycle len multiplier (default: 1.0)')
 parser.add_argument('--lr-cycle-limit', type=int, default=1, metavar='N',
                     help='learning rate cycle limit')
-parser.add_argument('--warmup-lr', type=float, default=WARMUP_LR, metavar='LR',
+parser.add_argument('--warmup-lr', type=float, default=0.0001, metavar='LR',
                     help='warmup learning rate (default: 0.0001)')
 parser.add_argument('--min-lr', type=float, default=1e-5, metavar='LR',
                     help='lower lr bound for cyclic schedulers that hit 0 (1e-5)')
-parser.add_argument('--epochs', type=int, default=EPOCHS, metavar='N',
+parser.add_argument('--epochs', type=int, default=300, metavar='N',
                     help='number of epochs to train (default: 2)')
 parser.add_argument('--epoch-repeats', type=float, default=0., metavar='N',
                     help='epoch repeat multiplier (number of times to repeat dataset epoch per train epoch).')
@@ -217,7 +154,7 @@ parser.add_argument('--start-epoch', default=None, type=int, metavar='N',
                     help='manual epoch number (useful on restarts)')
 parser.add_argument('--decay-epochs', type=float, default=30, metavar='N',
                     help='epoch interval to decay LR')
-parser.add_argument('--warmup-epochs', type=int, default=WARMUP_EPOCHS, metavar='N',
+parser.add_argument('--warmup-epochs', type=int, default=3, metavar='N',
                     help='epochs to warmup LR, if scheduler supports')
 parser.add_argument('--cooldown-epochs', type=int, default=10, metavar='N',
                     help='epochs to cooldown LR at min_lr, after cyclic schedule ends')
@@ -239,27 +176,27 @@ parser.add_argument('--vflip', type=float, default=0.,
                     help='Vertical flip training aug probability')
 parser.add_argument('--color-jitter', type=float, default=0.4, metavar='PCT',
                     help='Color jitter factor (default: 0.4)')
-parser.add_argument('--aa', type=str, default=AA, metavar='NAME',
+parser.add_argument('--aa', type=str, default=None, metavar='NAME',
                     help='Use AutoAugment policy. "v0" or "original". (default: None)'),
-parser.add_argument('--aug-splits', type=int, default=AUG_SPLITS,
+parser.add_argument('--aug-splits', type=int, default=0,
                     help='Number of augmentation splits (default: 0, valid: 0 or >=2)')
-parser.add_argument('--jsd', action='store_true', default=JSD,
+parser.add_argument('--jsd', action='store_true', default=False,
                     help='Enable Jensen-Shannon Divergence + CE loss. Use with `--aug-splits`.')
-parser.add_argument('--reprob', type=float, default=REPROB, metavar='PCT',
+parser.add_argument('--reprob', type=float, default=0., metavar='PCT',
                     help='Random erase prob (default: 0.)')
-parser.add_argument('--remode', type=str, default=REMODE,
+parser.add_argument('--remode', type=str, default='const',
                     help='Random erase mode (default: "const")')
 parser.add_argument('--recount', type=int, default=1,
                     help='Random erase count (default: 1)')
-parser.add_argument('--resplit', action='store_true', default=RESPLIT,
+parser.add_argument('--resplit', action='store_true', default=False,
                     help='Do not random erase first (clean) augmentation split')
-parser.add_argument('--mixup', type=float, default=MIXUP_A,
+parser.add_argument('--mixup', type=float, default=0.0,
                     help='mixup alpha, mixup enabled if > 0. (default: 0.)')
-parser.add_argument('--cutmix', type=float, default=CUTMIX_A,
+parser.add_argument('--cutmix', type=float, default=0.0,
                     help='cutmix alpha, cutmix enabled if > 0. (default: 0.)')
 parser.add_argument('--cutmix-minmax', type=float, nargs='+', default=None,
                     help='cutmix min/max ratio, overrides alpha and enables cutmix if set (default: None)')
-parser.add_argument('--mixup-prob', type=float, default=MIX_RPOB,
+parser.add_argument('--mixup-prob', type=float, default=1.0,
                     help='Probability of performing mixup or cutmix when either/both is enabled')
 parser.add_argument('--mixup-switch-prob', type=float, default=0.5,
                     help='Probability of switching to cutmix when both mixup and cutmix enabled')
@@ -287,11 +224,11 @@ parser.add_argument('--bn-momentum', type=float, default=None,
                     help='BatchNorm momentum override (if not None)')
 parser.add_argument('--bn-eps', type=float, default=None,
                     help='BatchNorm epsilon override (if not None)')
-parser.add_argument('--sync-bn', action='store_true', default=SYNC_BN,
+parser.add_argument('--sync-bn', action='store_true',
                     help='Enable NVIDIA Apex or Torch synchronized BatchNorm.')
-parser.add_argument('--dist-bn', type=str, default=DIST_BN,
+parser.add_argument('--dist-bn', type=str, default='',
                     help='Distribute BatchNorm stats between nodes after each epoch ("broadcast", "reduce", or "")')
-parser.add_argument('--split-bn', action='store_true', default=SPLIT_BN,
+parser.add_argument('--split-bn', action='store_true', #default=SPLIT_BN,
                     help='Enable separate BN layers per augmentation split.')
 
 # Model Exponential Moving Average
@@ -311,11 +248,11 @@ parser.add_argument('--recovery-interval', type=int, default=0, metavar='N',
                     help='how many batches to wait before writing recovery checkpoint')
 parser.add_argument('--checkpoint-hist', type=int, default=3, metavar='N',
                     help='number of checkpoints to keep (default: 3)')
-parser.add_argument('-j', '--workers', type=int, default=NUM_WORKERS, metavar='N',
+parser.add_argument('-j', '--workers', type=int, default=4, metavar='N',
                     help='how many training processes to use (default: 1)')
 parser.add_argument('--save-images', action='store_true', default=False,
                     help='save images of input bathes every log interval for debugging')
-parser.add_argument('--amp', action='store_true', default=AMP,
+parser.add_argument('--amp', action='store_true', default=False,
                     help='use NVIDIA Apex AMP or Native AMP for mixed precision training')
 parser.add_argument('--apex-amp', action='store_true', default=False,
                     help='Use NVIDIA Apex AMP mixed precision')
@@ -323,11 +260,11 @@ parser.add_argument('--native-amp', action='store_true', default=False,
                     help='Use Native Torch AMP mixed precision')
 parser.add_argument('--channels-last', action='store_true', default=False,
                     help='Use channels_last memory layout')
-parser.add_argument('--pin-mem', action='store_true', default=PIN_MEMORY,
+parser.add_argument('--pin-mem', action='store_true', default=False,
                     help='Pin CPU memory in DataLoader for more efficient (sometimes) transfer to GPU.')
 parser.add_argument('--no-prefetcher', action='store_true', default=False,
                     help='disable fast prefetcher')
-parser.add_argument('--output', default=DEFAULT_OUTPUT_DIR, type=str, metavar='PATH',
+parser.add_argument('--output', default='', type=str, metavar='PATH',
                     help='path to output folder (default: none, current dir)')
 parser.add_argument('--experiment', default='', type=str, metavar='NAME',
                     help='name of train experiment, name of sub-folder for output')
@@ -377,7 +314,9 @@ def main():
     setup_default_logging(log_path=os.path.join(output_dir, "print_log.txt"))
 
     print("Argument parser collected the following arguments:")
-    print(args)
+    for arg in vars(args):
+        print(f"    {arg}:{getattr(args, arg)}")
+    #print(args)
     print("\n")
 
     args.prefetcher = not args.no_prefetcher
