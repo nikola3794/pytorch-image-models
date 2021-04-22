@@ -19,6 +19,8 @@ from .constants import IMG_EXTENSIONS
 def find_images_and_targets(folder, types=IMG_EXTENSIONS, class_to_idx=None, leaf_name_only=True, sort=True, train_split_percentage=100):
     # Load directly if this information is saved already
     data_root_dir = os.path.dirname(folder)
+    # TODO HArdcoded.......fix......
+    # data_root_dir = "/cluster/work/cvl/nipopovic/data/ImageNet/2012-1k"
     which_split = os.path.basename(folder)
     if train_split_percentage == 100:
         samples_path = os.path.join(data_root_dir, "partitions", f"{which_split}_samples.json")
