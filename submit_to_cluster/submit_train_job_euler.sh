@@ -19,8 +19,8 @@ echo "CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES}"
 echo "Number of CPU threads/core: $(nproc --all)"
 
 # Transfer ImageNet to scratch
-#tar -I pigz -xf /cluster/work/cvl/yawli/data/ILSVRC2012.tar.gz -C ${TMPDIR}/
-#cp -R /cluster/work/cvl/nipopovic/data/ImageNet/2012-1k/partitions ${TMPDIR}/ILSVRC2012/
+tar -I pigz -xf /cluster/work/cvl/yawli/data/ILSVRC2012.tar.gz -C ${TMPDIR}/
+cp -R /cluster/work/cvl/nipopovic/data/ImageNet/2012-1k/partitions ${TMPDIR}/ILSVRC2012/
 
 # Set project paths
 PROJECT_ROOT_DIR=/cluster/project/cvl/nipopovic/code/pytorch-image-models
@@ -30,5 +30,5 @@ pwd
 
 #export OMP_NUM_THREADS=8
 
-./submit_to_cluster/distributed_train.sh 4 ${PROJECT_ROOT_DIR}/params_1.yaml
+./submit_to_cluster/distributed_train.sh 4 ${PROJECT_ROOT_DIR}/submit_to_cluster/$1
 # CUDA_LAUNCH_BLOCKING=1 for debugging cuda errors
