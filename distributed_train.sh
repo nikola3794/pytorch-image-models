@@ -1,5 +1,5 @@
 #!/bin/bash
 NUM_PROC=$1
 shift
-python3 -m torch.distributed.launch --nproc_per_node=$NUM_PROC train.py ${@:2} #"$@"
+python3 -m torch.distributed.launch --nproc_per_node=$NUM_PROC train.py --data_dir $2 #"$@"
 
