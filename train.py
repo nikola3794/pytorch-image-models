@@ -68,8 +68,9 @@ parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
 
 # TODO <------------------------------------
 DEFAULT_DATA_DIR = "/cluster/work/cvl/nipopovic/data/ImageNet/2012-1k"
+DEFAULT_DATA_DIR = ""
 TRAIN_SET_PERCENTAGE = 20
-DATASET = "hdf5" # ""
+DATASET = "" # ""
 DEFAULT_OUTPUT_DIR = "/cluster/work/cvl/nipopovic/experiments/ImageNet"
 
 MODEL = "resnet34_s32_trf_frac_1" # "resnet50_s32_trf_frac_1"
