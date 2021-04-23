@@ -3,7 +3,7 @@
 # ------------------------------------------------------------------------------
 
 # percentage of training set to use (for low-data learning experiments)
-train_split_percentage: 100
+train_split_percentage: 10
 # Name of model to train 
 model: resnet34_s32_trf_frac_just_v_1
 # input batch size for training 
@@ -14,7 +14,7 @@ validation_batch_size_multiplier: 2
 # Optimizer 
 opt: adamw
 # weight decay 
-weight_decay: 0.01
+weight_decay: 0.05
 # Clip gradient norm (default: None, no clipping)
 clip_grad: 1
 # Gradient clipping mode. One of ("norm", "value", "agc")
