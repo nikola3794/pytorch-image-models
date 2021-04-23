@@ -3,7 +3,7 @@
 # ------------------------------------------------------------------------------
 
 # percentage of training set to use (for low-data learning experiments)
-train_split_percentage: 20
+train_split_percentage: 100
 # Name of model to train 
 model: resnet34
 # input batch size for training 

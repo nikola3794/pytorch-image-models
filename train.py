@@ -764,6 +764,7 @@ def train_one_epoch(
                 # Log losses/metrics to wandb at appropriate steps
                 wandb.log({
                     "misc/lr": lr,
+                    "misc/epoch": epoch,
                     "train/loss/step": losses_m.avg,
                     "train/top1/step": top1_m.avg,
                     "train/top5/step": top5_m.avg,
