@@ -3,9 +3,9 @@
 # ------------------------------------------------------------------------------
 
 # percentage of training set to use (for low-data learning experiments)
-train_split_percentage: 5
+train_split_percentage: 1
 # Name of model to train 
-model: resnet34_s32_trf_frac_just_v_1
+model: resnet34
 # input batch size for training 
 batch_size: 128
 # ratio of validation batch size to training batch size (default: 1)
