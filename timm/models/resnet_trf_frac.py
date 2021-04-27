@@ -56,6 +56,25 @@ trf_1_stage_cfg = {
 trf_1_stage_just_v_cfg = copy.copy(trf_1_stage_cfg)
 trf_1_stage_just_v_cfg["just_v"] = True
 
+
+trf_2_stage_cfg = {
+    "embed_dim": 256,
+    "depth": 2,
+    "num_heads": 4,
+    "mlp_ratio": 2.,
+    "qkv_bias": False,
+    "qk_scale": None, # Manual scale factor of q*k.T, instead of automatic
+    "drop_rate": 0.1, # Embedding dropout rate + MLP dropout rate
+    "attn_drop_rate": 0.0, # dropout(q*k.T), before q*k.T is used to calculate values
+    "drop_path_rate": 0.0, # Stochastic depth rate
+    "norm_layer": nn.LayerNorm, # LayerNorm by default
+    "act_layer": nn.GELU,
+    "weight_init": "", # Weight init scheme. Default chosen.
+    "just_v": False, # If true --> key = value, query = value
+}
+trf_2_stage_just_v_cfg = copy.copy(trf_2_stage_cfg)
+trf_2_stage_just_v_cfg["just_v"] = True
+
 def _cfg(url='', **kwargs):
     return {
         'url': url,
@@ -71,12 +90,18 @@ default_cfgs = {
     'resnet34_s32_trf_frac_just_v_1': _cfg(
         url='',
         interpolation='bicubic'),
+    'resnet34_s32_trf_frac_just_v_2': _cfg(
+        url='',
+        interpolation='bicubic'),
 
     'resnet34_s16_trf_frac_just_v_1': _cfg(
         url='',
         interpolation='bicubic'),
         
     'resnet34_s32_trf_frac_1': _cfg(
+        url='',
+        interpolation='bicubic'),        
+    'resnet34_s32_trf_frac_2': _cfg(
         url='',
         interpolation='bicubic'),
 
@@ -837,6 +862,15 @@ def resnet34_s32_trf_frac_just_v_1(pretrained=False, **kwargs):
     model_args = dict(block=BasicBlock, layers=[3, 4, 6, 3], trf_stage_cfg=trf_stage_cfg, **kwargs)
     return _create_resnet('resnet34_s32_trf_frac_just_v_1', pretrained, **model_args)
 
+@register_model
+def resnet34_s32_trf_frac_just_v_2(pretrained=False, **kwargs):
+    kwargs["output_stride"] = 32
+
+    trf_stage_cfg = trf_2_stage_just_v_cfg
+
+    model_args = dict(block=BasicBlock, layers=[3, 4, 6, 3], trf_stage_cfg=trf_stage_cfg, **kwargs)
+    return _create_resnet('resnet34_s32_trf_frac_just_v_2', pretrained, **model_args)
+
 
 @register_model
 def resnet34_s16_trf_frac_just_v_1(pretrained=False, **kwargs):
@@ -855,7 +889,16 @@ def resnet34_s32_trf_frac_1(pretrained=False, **kwargs):
     trf_stage_cfg = trf_1_stage_cfg
 
     model_args = dict(block=BasicBlock, layers=[3, 4, 6, 3], trf_stage_cfg=trf_stage_cfg, **kwargs)
-    return _create_resnet('resnet34_s32_trf_frac_1', pretrained, **model_args)
+    return _create_resnet('resnet34_s32_trf_frac_1', pretrained, **model_args)   
+
+@register_model
+def resnet34_s32_trf_frac_2(pretrained=False, **kwargs):
+    kwargs["output_stride"] = 32
+
+    trf_stage_cfg = trf_2_stage_cfg
+
+    model_args = dict(block=BasicBlock, layers=[3, 4, 6, 3], trf_stage_cfg=trf_stage_cfg, **kwargs)
+    return _create_resnet('resnet34_s32_trf_frac_2', pretrained, **model_args)
 
 
 @register_model

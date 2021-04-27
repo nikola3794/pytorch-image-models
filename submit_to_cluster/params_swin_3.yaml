@@ -3,16 +3,16 @@
 # ------------------------------------------------------------------------------
 
 # percentage of training set to use (for low-data learning experiments)
-train_split_percentage: 5
+train_split_percentage: 20
 # Name of model to train 
-model: resnet34_s32_trf_frac_just_v_1
+model: swin_tiny_patch4_window7_224_just_v
 # input batch size for training 
-batch_size: 128
+batch_size: 64
 # ratio of validation batch size to training batch size (default: 1)
 validation_batch_size_multiplier: 2
 
 # Optimizer 
-opt: sgd
+opt: adamw
 # weight decay 
 weight_decay: 0.05
 # Clip gradient norm (default: None, no clipping)
@@ -23,15 +23,15 @@ clip_mode: norm
 # LR scheduler
 sched: cosine
 # learning rate
-lr: 0.05
+lr: 0.001
 # warmup learning rate (default: 0.0001)
-warmup_lr: 0.0001
+warmup_lr: 0.00001
 # lower lr bound for cyclic schedulers that hit 0 (1e-5)
 min_lr: 0.00001
 # number of epochs to train
-epochs: 290
+epochs: 300
 # epochs to warmup LR, if scheduler supports
-warmup_epochs: 5
+warmup_epochs: 20
 
 # Random erase prob (default: 0.)
 reprob: 0.25
