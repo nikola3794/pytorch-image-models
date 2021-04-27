@@ -1,33 +1,20 @@
 # ------------------------------------------------------------------------------
-#                        ****** DEBUG *******
-# ------------------------------------------------------------------------------
-
-# path to dataset
-data_dir: /home/nipopovic/Projects/hl_task_prediction/big_storage/data_sets_shortcut/ImageNet/2012-1k
-# dataset type (default: ImageFolder/ImageTar if empty)
-dataset: ''
-# path to output folder (default: none, current dir)
-output: /home/nipopovic/Projects/hl_task_prediction/big_storage/experiment_logs_shortcut/tmp
-# Name of model to train 
-# model: resnet34_s32_trf_frac_just_v_1
-model: swin_tiny_patch4_window7_224_just_v
-# input batch size for training 
-batch_size: 6
-
-
-# ------------------------------------------------------------------------------
 #                                 SELECTED
 # ------------------------------------------------------------------------------
 
 # percentage of training set to use (for low-data learning experiments)
 train_split_percentage: 20
+# Name of model to train 
+model: swin_tiny_patch4_window7_224
+# input batch size for training 
+batch_size: 128
 # ratio of validation batch size to training batch size (default: 1)
 validation_batch_size_multiplier: 2
 
 # Optimizer 
 opt: adamw
 # weight decay 
-weight_decay: 0.01
+weight_decay: 0.05
 # Clip gradient norm (default: None, no clipping)
 clip_grad: 1
 # Gradient clipping mode. One of ("norm", "value", "agc")
@@ -40,11 +27,11 @@ lr: 0.001
 # warmup learning rate (default: 0.0001)
 warmup_lr: 0.00001
 # lower lr bound for cyclic schedulers that hit 0 (1e-5)
-min_lr: 0.000001
+min_lr: 0.00001
 # number of epochs to train
 epochs: 300
 # epochs to warmup LR, if scheduler supports
-warmup_epochs: 5
+warmup_epochs: 20
 
 # Random erase prob (default: 0.)
 reprob: 0.25
@@ -59,23 +46,30 @@ resplit: false
 sync_bn: true
 
 
+
 # random seed (default: 42)
 seed: 42
 # how many batches to wait before logging training status
-log_interval: 2
+log_interval: 50
 # number of checkpoints to keep (default: 3)
 checkpoint_hist: 2
 # how many training processes to use (default: 1)
-workers: 1
+workers: 8
 # Pin CPU memory in DataLoader for more efficient (sometimes) transfer to GPU.
 pin_mem: true
+# path to output folder (default: none, current dir)
+output: /cluster/work/cvl/nipopovic/experiments/ImageNet
 # use the multi-epochs-loader to save time at the beginning of every epoch
 use_multi_epochs_loader: true
 
 
 # ------------------------------------------------------------------------------
-# Dataset / Model parameters
+#                       Dataset / Model parameters
 # ------------------------------------------------------------------------------
+# path to dataset
+data_dir: '/cluster/work/cvl/nipopovic/data/ImageNet/2012-1k'
+# dataset type (default: ImageFolder/ImageTar if empty)
+dataset: 'hdf5'
 # dataset train split (default: train)
 train_split: train
 # dataset validation split (default: validation)
@@ -106,7 +100,7 @@ std: null
 interpolation: ''
 
 # ------------------------------------------------------------------------------
-# Optimizer parameters
+#                         Optimizer parameters
 # ------------------------------------------------------------------------------
 # Optimizer Epsilon (default: None, use opt default)
 opt_eps: null
@@ -116,7 +110,7 @@ opt_betas: null
 momentum: 0.9
 
 # ------------------------------------------------------------------------------
-# Learning rate schedule parameters
+#                      Learning rate schedule parameters
 # ------------------------------------------------------------------------------
 # learning rate noise on/off epoch percentages
 lr_noise: null
@@ -133,7 +127,7 @@ epoch_repeats: 0.0
 # manual epoch number (useful on restarts)
 start_epoch: null
 # epoch interval to decay LR
-decay_epochs: 30
+decay_epochs: 100
 # epochs to cooldown LR at min_lr, after cyclic schedule ends
 cooldown_epochs: 10
 # patience epochs for Plateau LR scheduler (default: 10'
@@ -142,7 +136,7 @@ patience_epochs: 10
 decay_rate: 0.1
 
 # ------------------------------------------------------------------------------
-# Augmentation & regularization parameters
+#                 Augmentation & regularization parameters
 # ------------------------------------------------------------------------------
 # Disable all training augmentation, override other train aug args
 no_aug: false
@@ -194,7 +188,7 @@ drop_path: null
 drop_block: null
 
 # ------------------------------------------------------------------------------
-# Batch norm parameters (only works with gen_efficientnet based models currently)
+#  Batch norm parameters (only works with gen_efficientnet based models currently)
 # ------------------------------------------------------------------------------
 # Use Tensorflow BatchNorm defaults for models that support it (default: False)
 bn_tf: false
@@ -208,7 +202,7 @@ dist_bn: ''
 split_bn: false
 
 # ------------------------------------------------------------------------------
-# Model Exponential Moving Average
+#                     Model Exponential Moving Average
 # ------------------------------------------------------------------------------
 # Enable tracking moving average of model weights
 model_ema: false
@@ -218,7 +212,7 @@ model_ema_force_cpu: false
 model_ema_decay: 0.9998
 
 # ------------------------------------------------------------------------------
-# Misc
+#                                  Misc
 # ------------------------------------------------------------------------------
 # how many batches to wait before writing recovery checkpoint
 recovery_interval: 0
