@@ -31,4 +31,4 @@ pwd
 #export OMP_NUM_THREADS=8
 
 # CUDA_LAUNCH_BLOCKING=1 for debugging cuda errors
-./submit_to_cluster/distributed_train.sh 4 ${PROJECT_ROOT_DIR}/submit_to_cluster/params_swin_1.yaml
+./submit_to_cluster/distributed_train.sh 4 ${PROJECT_ROOT_DIR}/submit_to_cluster/params_1.yaml

@@ -6,7 +6,7 @@ debug: false
 # ------------------------------------------------------------------------------
 
 # percentage of training set to use (for low-data learning experiments)
-train_split_percentage: 5
+train_split_percentage: 20
 # Name of model to train 
 model: resnet101
 # input batch size for training 
@@ -70,7 +70,7 @@ use_multi_epochs_loader: true
 #                       Dataset / Model parameters
 # ------------------------------------------------------------------------------
 # path to dataset
-data_dir: 'hdf5'
+data_dir: ''
 # dataset type (default: ImageFolder/ImageTar if empty)
 dataset: ''
 # dataset train split (default: train)
