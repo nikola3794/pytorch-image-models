@@ -4,7 +4,7 @@
 #BSUB -n 32 # number of cpu cores
 #BSUB -R "rusage[mem=4096]" # MB per CPU core
 #BSUB -R "rusage[ngpus_excl_p=4]" # number of GPU cores
-#BSUB -R "select[gpu_mtotal0>=10240]" # MB per GPU core
+#BSUB -R "select[gpu_mtotal0>=20240]" # MB per GPU core
 
 # Activate python environment
 source /cluster/home/nipopovic/python_envs/cls_models/bin/activate
@@ -30,5 +30,5 @@ pwd
 
 #export OMP_NUM_THREADS=8
 
-./submit_to_cluster/distributed_train.sh 4 ${PROJECT_ROOT_DIR}/submit_to_cluster/params_swin_1.yaml
 # CUDA_LAUNCH_BLOCKING=1 for debugging cuda errors
+./submit_to_cluster/distributed_train.sh 4 ${PROJECT_ROOT_DIR}/submit_to_cluster/params_swin_1.yaml

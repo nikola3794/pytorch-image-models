@@ -68,6 +68,9 @@ parser.add_argument('-c', '--config', default=YAML_CONFIG_PATH, type=str, metava
 
 parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
 # Dataset / Model parameters
+parser.add_argument('--debug', default=False,
+                    help='Debug mode')
+
 parser.add_argument('--data_dir', metavar='DIR',
                     help='path to dataset',
                     default='thois_must_be_passed')
@@ -592,18 +595,19 @@ def main():
         with open(os.path.join(output_dir, 'args.yaml'), 'w') as f:
             f.write(args_text)
 
-        # Make a wandb logger
-        wandb.init(
-            project="ImageNet", 
-            name=exp_name, 
-            config=args,
-            dir=output_dir,
-        )
-        wandb.watch(
-            model,
-            log='gradients', 
-            log_freq=args.log_interval
-        )
+        if not args.debug:
+            # Make a wandb logger
+            wandb.init(
+                project="ImageNet", 
+                name=exp_name, 
+                config=args,
+                dir=output_dir,
+            )
+            wandb.watch(
+                model,
+                log='gradients', 
+                log_freq=args.log_interval
+            )
     try:
         for epoch in range(start_epoch, num_epochs):
             if args.distributed and hasattr(loader_train.sampler, 'set_epoch'):
@@ -637,7 +641,7 @@ def main():
                 write_header=best_metric is None)
 
             # Log losses/metrics at the end of the epoch
-            if args.local_rank == 0:                
+            if args.local_rank == 0 and not args.debug:                
                 wandb.log({
                     "train/loss/step": train_metrics["loss"],
                     "train/top1/step": train_metrics["top1"],
@@ -762,13 +766,14 @@ def train_one_epoch(
                         data_time=data_time_m))
                 
                 # Log losses/metrics to wandb at appropriate steps
-                wandb.log({
-                    "misc/lr": lr,
-                    "misc/epoch": epoch,
-                    "train/loss/step": losses_m.avg,
-                    "train/top1/step": top1_m.avg,
-                    "train/top5/step": top5_m.avg,
-                })
+                if not args.debug:
+                    wandb.log({
+                        "misc/lr": lr,
+                        "misc/epoch": epoch,
+                        "train/loss/step": losses_m.avg,
+                        "train/top1/step": top1_m.avg,
+                        "train/top5/step": top5_m.avg,
+                    })
 
                 if args.save_images and output_dir:
                     torchvision.utils.save_image(

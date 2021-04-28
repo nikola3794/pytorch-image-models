@@ -1,3 +1,6 @@
+# debug mode
+debug: true
+
 # ------------------------------------------------------------------------------
 #                        ****** DEBUG *******
 # ------------------------------------------------------------------------------
@@ -5,7 +8,7 @@
 # path to dataset
 data_dir: /home/nipopovic/Projects/hl_task_prediction/big_storage/data_sets_shortcut/ImageNet/2012-1k
 # dataset type (default: ImageFolder/ImageTar if empty)
-dataset: 'hdf5'
+dataset: ''
 # path to output folder (default: none, current dir)
 output: /home/nipopovic/Projects/hl_task_prediction/big_storage/experiment_logs_shortcut/tmp
 # Name of model to train 

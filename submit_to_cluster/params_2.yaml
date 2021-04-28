@@ -1,11 +1,14 @@
+# debug mode
+debug: false
+
 # ------------------------------------------------------------------------------
 #                                 SELECTED
 # ------------------------------------------------------------------------------
 
 # percentage of training set to use (for low-data learning experiments)
-train_split_percentage: 20
+train_split_percentage: 5
 # Name of model to train 
-model: resnet34_s32_trf_frac_just_v_2
+model: resnet101
 # input batch size for training 
 batch_size: 128
 # ratio of validation batch size to training batch size (default: 1)
@@ -67,7 +70,7 @@ use_multi_epochs_loader: true
 #                       Dataset / Model parameters
 # ------------------------------------------------------------------------------
 # path to dataset
-data_dir: ''
+data_dir: 'hdf5'
 # dataset type (default: ImageFolder/ImageTar if empty)
 dataset: ''
 # dataset train split (default: train)
