@@ -8,7 +8,7 @@ debug: false
 # percentage of training set to use (for low-data learning experiments)
 train_split_percentage: 100
 # Name of model to train 
-model: swin_tiny_patch4_window7_224
+model: swin_tiny_patch4_window7_224_just_v
 # input batch size for training 
 batch_size: 128
 # ratio of validation batch size to training batch size (default: 1)
@@ -70,9 +70,9 @@ use_multi_epochs_loader: true
 #                       Dataset / Model parameters
 # ------------------------------------------------------------------------------
 # path to dataset
-data_dir: '/cluster/work/cvl/nipopovic/data/ImageNet/2012-1k/'
+data_dir: ''
 # dataset type (default: ImageFolder/ImageTar if empty)
-dataset: 'hdf5'
+dataset: ''
 # dataset train split (default: train)
 train_split: train
 # dataset validation split (default: validation)
