@@ -4,7 +4,7 @@
 #BSUB -n 32 # number of cpu cores
 #BSUB -R "rusage[mem=4096]" # MB per CPU core
 #BSUB -R "rusage[ngpus_excl_p=4]" # number of GPU cores
-#BSUB -R "select[gpu_mtotal0>=20240]" # MB per GPU core
+#BSUB -R "select[gpu_mtotal0>=10240]" # MB per GPU core
 
 # Activate python environment
 source /cluster/home/nipopovic/python_envs/cls_models/bin/activate
