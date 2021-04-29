@@ -13,7 +13,7 @@ dataset: ''
 output: /home/nipopovic/Projects/hl_task_prediction/big_storage/experiment_logs_shortcut/tmp
 # Name of model to train 
 # model: resnet34_s32_trf_frac_just_v_1
-model: resnet34_s32_trf_frac_just_v_2
+model: resnet34_s32_trf_frac_just_v_1
 # input batch size for training 
 batch_size: 6
 
@@ -67,7 +67,7 @@ seed: 42
 # how many batches to wait before logging training status
 log_interval: 2
 # number of checkpoints to keep (default: 3)
-checkpoint_hist: 2
+checkpoint_hist: 1
 # how many training processes to use (default: 1)
 workers: 1
 # Pin CPU memory in DataLoader for more efficient (sometimes) transfer to GPU.

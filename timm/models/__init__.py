@@ -38,6 +38,7 @@ from .xception_aligned import *
 
 # TODO Custom made
 from .resnet_trf_frac import *
+from .resnet_trf_frac_no_mlp import *
 from .swin_transformer_just_v import *
 
 from .factory import create_model, split_model_name, safe_model_name

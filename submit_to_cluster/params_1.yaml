@@ -55,7 +55,7 @@ seed: 42
 # how many batches to wait before logging training status
 log_interval: 50
 # number of checkpoints to keep (default: 3)
-checkpoint_hist: 2
+checkpoint_hist: 1
 # how many training processes to use (default: 1)
 workers: 8
 # Pin CPU memory in DataLoader for more efficient (sometimes) transfer to GPU.

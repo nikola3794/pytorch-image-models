@@ -6,11 +6,11 @@ debug: false
 # ------------------------------------------------------------------------------
 
 # percentage of training set to use (for low-data learning experiments)
-train_split_percentage: 20
+train_split_percentage: 100
 # Name of model to train 
 model: swin_tiny_patch4_window7_224
 # input batch size for training 
-batch_size: 64
+batch_size: 128
 # ratio of validation batch size to training batch size (default: 1)
 validation_batch_size_multiplier: 2
 
@@ -55,7 +55,7 @@ seed: 42
 # how many batches to wait before logging training status
 log_interval: 50
 # number of checkpoints to keep (default: 3)
-checkpoint_hist: 2
+checkpoint_hist: 1
 # how many training processes to use (default: 1)
 workers: 8
 # Pin CPU memory in DataLoader for more efficient (sometimes) transfer to GPU.
@@ -70,9 +70,9 @@ use_multi_epochs_loader: true
 #                       Dataset / Model parameters
 # ------------------------------------------------------------------------------
 # path to dataset
-data_dir: ''
+data_dir: '/cluster/work/cvl/nipopovic/data/ImageNet/2012-1k/'
 # dataset type (default: ImageFolder/ImageTar if empty)
-dataset: ''
+dataset: 'hdf5'
 # dataset train split (default: train)
 train_split: train
 # dataset validation split (default: validation)
