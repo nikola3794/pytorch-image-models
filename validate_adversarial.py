@@ -133,11 +133,10 @@ parser.add_argument('--valid-labels', default='', type=str, metavar='FILENAME',
 
 def validate(args):
     _logger.info(f'\n\n ---------------EVALUATION {args.eps}------------------------------- \n\n')
-    print("Argument parser collected the following arguments:")
+    _logger.info("Argument parser collected the following arguments:")
     for arg in vars(args):
-        print(f"    {arg}:{getattr(args, arg)}")
-    print("\n")
-
+        _logger.info(f"    {arg}:{getattr(args, arg)}")
+    _logger.info("\n")
 
     # might as well try to validate something
     args.pretrained = args.pretrained or not args.checkpoint

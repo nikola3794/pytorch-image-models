@@ -316,11 +316,11 @@ def main():
     
     setup_default_logging(log_path=os.path.join(output_dir, "print_log.txt"))
 
-    print("Argument parser collected the following arguments:")
+    _logger.info("Argument parser collected the following arguments:")
     for arg in vars(args):
-        print(f"    {arg}:{getattr(args, arg)}")
+        _logger.info(f"    {arg}:{getattr(args, arg)}")
     #print(args)
-    print("\n")
+    _logger.info("\n")
 
     args.prefetcher = not args.no_prefetcher
     args.distributed = False
