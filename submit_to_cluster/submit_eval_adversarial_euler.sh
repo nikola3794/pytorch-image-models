@@ -21,6 +21,7 @@ echo "Number of CPU threads/core: $(nproc --all)"
 # Transfer ImageNet to scratch
 tar -I pigz -xf /cluster/work/cvl/yawli/data/ILSVRC2012.tar.gz -C ${TMPDIR}/
 cp -R /cluster/work/cvl/nipopovic/data/ImageNet/2012-1k/partitions ${TMPDIR}/ILSVRC2012/
+echo "Content of directory where data is transfered $(ls ${TMPDIR})"
 
 # Set project paths
 PROJECT_ROOT_DIR=/cluster/project/cvl/nipopovic/code/pytorch-image-models
