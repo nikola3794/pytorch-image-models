@@ -75,6 +75,25 @@ trf_2_stage_cfg = {
 trf_2_stage_just_v_cfg = copy.copy(trf_2_stage_cfg)
 trf_2_stage_just_v_cfg["just_v"] = True
 
+
+trf_4_stage_cfg = {
+    "embed_dim": 512,
+    "depth": 1,
+    "num_heads": 8,
+    "mlp_ratio": 3.,
+    "qkv_bias": False,
+    "qk_scale": None, # Manual scale factor of q*k.T, instead of automatic
+    "drop_rate": 0.05, # Embedding dropout rate + MLP dropout rate
+    "attn_drop_rate": 0.0, # dropout(q*k.T), before q*k.T is used to calculate values
+    "drop_path_rate": 0.0, # Stochastic depth rate
+    "norm_layer": nn.LayerNorm, # LayerNorm by default
+    "act_layer": nn.GELU,
+    "weight_init": "", # Weight init scheme. Default chosen.
+    "just_v": False, # If true --> key = value, query = value
+}
+trf_4_stage_just_v_cfg = copy.copy(trf_4_stage_cfg)
+trf_4_stage_just_v_cfg["just_v"] = True
+
 def _cfg(url='', **kwargs):
     return {
         'url': url,
@@ -91,6 +110,9 @@ default_cfgs = {
         url='',
         interpolation='bicubic'),
     'resnet34_s32_trf_frac_just_v_2': _cfg(
+        url='',
+        interpolation='bicubic'),
+    'resnet34_s32_trf_frac_just_v_4': _cfg(
         url='',
         interpolation='bicubic'),
 
@@ -870,6 +892,15 @@ def resnet34_s32_trf_frac_just_v_2(pretrained=False, **kwargs):
 
     model_args = dict(block=BasicBlock, layers=[3, 4, 6, 3], trf_stage_cfg=trf_stage_cfg, **kwargs)
     return _create_resnet('resnet34_s32_trf_frac_just_v_2', pretrained, **model_args)
+
+@register_model
+def resnet34_s32_trf_frac_just_v_4(pretrained=False, **kwargs):
+    kwargs["output_stride"] = 32
+
+    trf_stage_cfg = trf_4_stage_just_v_cfg
+
+    model_args = dict(block=BasicBlock, layers=[3, 4, 6, 3], trf_stage_cfg=trf_stage_cfg, **kwargs)
+    return _create_resnet('resnet34_s32_trf_frac_just_v_4', pretrained, **model_args)
 
 
 @register_model

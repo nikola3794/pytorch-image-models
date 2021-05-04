@@ -13,7 +13,7 @@ dataset: ''
 output: /home/nipopovic/Projects/hl_task_prediction/big_storage/experiment_logs_shortcut/tmp
 # Name of model to train 
 # model: resnet34_s32_trf_frac_just_v_1
-model: resnet34_s32_trf_frac_no_mlp_1
+model: resnet34_s32_trf_frac_just_v_4
 # input batch size for training 
 batch_size: 6
 
